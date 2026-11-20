@@ -37,29 +37,54 @@ jobs:
           touch _site/.nojekyll
       - name: Recuperer la meteo Open-Meteo
         run: python3 actualiser_meteo.py _site/weather.json
-      - name: Recuperer et chiffrer une seule liste Bring
+      - name: Verifier la configuration Bring (sans afficher les valeurs)
         env:
           BRING_EMAIL: ${{ secrets.BRING_EMAIL }}
           BRING_PASSWORD: ${{ secrets.BRING_PASSWORD }}
           BRING_LIST_NAME: ${{ secrets.BRING_LIST_NAME }}
           BRING_VIEW_KEY: ${{ secrets.BRING_VIEW_KEY }}
+        shell: bash
         run: |
-          if [ -n "$BRING_EMAIL" ] && [ -n "$BRING_PASSWORD" ] && [ -n "$BRING_LIST_NAME" ] && [ -n "$BRING_VIEW_KEY" ]; then
-            python3 -m pip install --quiet bring-api==1.1.2
-            mkdir -p _private
-            if python3 synchroniser_bring.py _private/bring.json; then
-              if node chiffrer_bring.js _private/bring.json _site/bring.enc.json; then
-                echo 'Bring chiffre et ajoute au site.'
-              else
-                echo 'Attention : chiffrement Bring impossible; le reste du site continue.'
-              fi
+          failed=0
+          for name in BRING_EMAIL BRING_PASSWORD BRING_LIST_NAME BRING_VIEW_KEY; do
+            if [ -z "${!name}" ]; then
+              echo "ERREUR : secret $name absent ou vide."
+              failed=1
             else
-              echo 'Attention : Bring indisponible; le reste du site continue.'
+              echo "OK : secret $name defini."
             fi
-            rm -f _private/bring.json
-          else
-            echo 'Bring : secrets pas encore configures; le reste du site sera publie.'
+          done
+          if [ "${#BRING_VIEW_KEY}" -lt 20 ]; then
+            echo "ERREUR : BRING_VIEW_KEY doit avoir au moins 20 caracteres."
+            failed=1
           fi
+          if [ "$failed" -ne 0 ]; then
+            echo "Echec de la configuration Bring : deploiement conserve dans son ancienne version."
+            exit 1
+          fi
+      - name: Installer l'API Bring
+        run: python3 -m pip install --quiet bring-api==1.1.2
+      - name: Recuperer et chiffrer la liste Bring
+        env:
+          BRING_EMAIL: ${{ secrets.BRING_EMAIL }}
+          BRING_PASSWORD: ${{ secrets.BRING_PASSWORD }}
+          BRING_LIST_NAME: ${{ secrets.BRING_LIST_NAME }}
+          BRING_VIEW_KEY: ${{ secrets.BRING_VIEW_KEY }}
+        shell: bash
+        run: |
+          mkdir -p _private
+          trap 'rm -f _private/bring.json' EXIT
+          python3 synchroniser_bring.py _private/bring.json
+          test -s _private/bring.json || { echo 'ERREUR : donnees Bring indisponibles'; exit 1; }
+          node chiffrer_bring.js _private/bring.json _site/bring.enc.json
+          test -s _site/bring.enc.json || { echo 'ERREUR : bring.enc.json non produit'; exit 1; }
+          python3 - <<'CHECK_JSON'
+          import json
+          from pathlib import Path
+          data=json.loads(Path('_site/bring.enc.json').read_text(encoding='utf-8'))
+          assert isinstance(data,dict) and data.get('ct') and data.get('iv') and data.get('salt'), 'Format de chiffrement invalide'
+          print('OK : bring.enc.json chiffre, valide, inclus dans le deploiement.')
+          CHECK_JSON
       - name: Configurer GitHub Pages
         uses: actions/configure-pages@v5
       - name: Publier les fichiers
