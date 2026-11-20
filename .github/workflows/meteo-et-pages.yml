@@ -1,10 +1,10 @@
-name: Publier iPad Mural et meteo
+name: Publier iPad Mural, meteo et Bring chiffre
 
 on:
   push:
     branches: [main]
   schedule:
-    - cron: '17 * * * *'
+    - cron: '11,41 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -25,13 +25,41 @@ jobs:
     steps:
       - name: Recuperer les fichiers publics
         uses: actions/checkout@v4
+      - name: Installer la version fixe de SJCL
+        run: |
+          npm install --no-save --ignore-scripts --no-audit sjcl@1.0.9
+          test -s node_modules/sjcl/sjcl.js
       - name: Preparer le site
         run: |
           mkdir -p _site
           cp index.html demo-paysage-1.jpg demo-paysage-2.jpg _site/
+          cp node_modules/sjcl/sjcl.js _site/sjcl.js
           touch _site/.nojekyll
       - name: Recuperer la meteo Open-Meteo
         run: python3 actualiser_meteo.py _site/weather.json
+      - name: Recuperer et chiffrer une seule liste Bring
+        env:
+          BRING_EMAIL: ${{ secrets.BRING_EMAIL }}
+          BRING_PASSWORD: ${{ secrets.BRING_PASSWORD }}
+          BRING_LIST_NAME: ${{ secrets.BRING_LIST_NAME }}
+          BRING_VIEW_KEY: ${{ secrets.BRING_VIEW_KEY }}
+        run: |
+          if [ -n "$BRING_EMAIL" ] && [ -n "$BRING_PASSWORD" ] && [ -n "$BRING_LIST_NAME" ] && [ -n "$BRING_VIEW_KEY" ]; then
+            python3 -m pip install --quiet bring-api==1.1.2
+            mkdir -p _private
+            if python3 synchroniser_bring.py _private/bring.json; then
+              if node chiffrer_bring.js _private/bring.json _site/bring.enc.json; then
+                echo 'Bring chiffre et ajoute au site.'
+              else
+                echo 'Attention : chiffrement Bring impossible; le reste du site continue.'
+              fi
+            else
+              echo 'Attention : Bring indisponible; le reste du site continue.'
+            fi
+            rm -f _private/bring.json
+          else
+            echo 'Bring : secrets pas encore configures; le reste du site sera publie.'
+          fi
       - name: Configurer GitHub Pages
         uses: actions/configure-pages@v5
       - name: Publier les fichiers
