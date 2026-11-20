@@ -1,0 +1,1182 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<title>Maison - Tableau de bord iPad 2 V3.1</title>
+<style>
+/* CSS volontairement simple : Safari iOS 9, sans frameworks ni polices externes. */
+* { -webkit-box-sizing:border-box; box-sizing:border-box; }
+html,body { margin:0; min-height:100%; background:#101820; color:#edf2f5; font-family:Helvetica,Arial,sans-serif; -webkit-text-size-adjust:100%; }
+body { padding:20px 23px 22px; }
+button,input,textarea { font-family:Helvetica,Arial,sans-serif; font-size:17px; }
+button { cursor:pointer; -webkit-appearance:none; appearance:none; }
+button:active { opacity:.78; }
+.topbar { min-height:50px; overflow:hidden; padding-bottom:12px; margin-bottom:16px; border-bottom:1px solid #2c3d48; }
+.logo { float:left; padding-top:6px; font-weight:bold; font-size:17px; letter-spacing:.09em; }
+.connection { float:right; padding-top:8px; font-size:13px; color:#b6c5d1; }
+.connection strong { color:#93d5be; }
+.nav { overflow:hidden; margin:0 -4px 14px; }
+.nav button { float:left; margin:0 4px 7px; min-width:105px; min-height:43px; border-radius:9px; border:1px solid #354855; padding:10px 15px; color:#e2e9ee; background:#1b2b36; }
+.nav button.active { border-color:#6aabc5; background:#264b5f; color:#fff; }
+.page { display:none; }
+.page.active { display:block; }
+.hero { overflow:hidden; background:#192b37; border-radius:15px; border:1px solid #2e4657; padding:20px 24px; margin-bottom:10px; }
+.hero-left { float:left; width:65%; }
+.clock { font-size:88px; font-weight:normal; line-height:1; letter-spacing:-3px; }
+.date { color:#b8cad6; font-size:20px; margin-top:10px; }
+.subtext { color:#8fa7b7; font-size:14px; margin-top:9px; }
+.hero-right { float:right; width:34%; padding-top:12px; text-align:right; }
+.hero-right .welcome { color:#8bc8da; font-size:14px; text-transform:uppercase; letter-spacing:.10em; }
+.hero-right .big { font-size:26px; margin-top:10px; }
+.tile-grid { margin:0 -5px; overflow:hidden; }
+/* Une ligne explicite par paire : les tuiles ne se décalent pas si les textes ont des hauteurs différentes. */
+.tile-row { overflow:hidden; clear:both; }
+.tile { width:50%; float:left; padding:5px; }
+.tile-box { display:block; width:100%; min-height:149px; margin:0; background:#1a2a35; color:#edf2f5; border:1px solid #314554; border-radius:13px; padding:17px 19px; text-align:left; font-size:16px; -webkit-appearance:none; appearance:none; cursor:pointer; -webkit-tap-highlight-color:rgba(139,200,218,.23); }
+.tile-box:active, .tile-box:focus { background:#264554; border-color:#80c8df; outline:none; }
+.tile-title { display:block; font-size:22px; font-weight:bold; margin:0 0 10px; }
+.tile-title .mark { color:#8bc8da; font-size:18px; margin-right:9px; }
+.tile-sub { display:block; font-size:16px; color:#c2d1da; line-height:1.45; min-height:46px; }
+.status { display:block; font-size:13px; color:#9db3c3; margin-top:10px; }
+.status.ready { color:#98d3b5; }
+.panel { background:#1a2a35; border-radius:13px; border:1px solid #314554; padding:20px; margin:10px 0; }
+h1 { font-size:27px; margin:2px 0 12px; font-weight:normal; }
+h2 { font-size:21px; margin:0 0 10px; }
+p { color:#c2d1da; line-height:1.5; margin:0 0 14px; font-size:16px; }
+.muted { color:#9db1bf; }
+.small { font-size:13px; }
+label { display:block; color:#c6d5df; margin-bottom:6px; font-size:15px; }
+.field { margin-bottom:13px; }
+.field input, .field textarea { width:100%; border:1px solid #4c6473; border-radius:8px; padding:12px 13px; color:#111b22; background:#f4f7f9; }
+.field textarea { height:135px; resize:vertical; }
+.primary { color:#081c29; background:#9ad3e2; border:0; border-radius:8px; padding:13px 18px; font-weight:bold; min-height:46px; }
+.secondary { color:#e6eef3; background:#284454; border:1px solid #567282; border-radius:8px; padding:10px 14px; min-height:43px; }
+.smallbtn { min-height:36px; padding:8px 10px; font-size:14px; }
+.message { margin:11px 0; min-height:18px; color:#a9dcb8; font-size:14px; }
+.event { padding:13px 0; border-bottom:1px solid #304756; overflow:hidden; }
+.event:last-child { border-bottom:0; }
+.event-name { display:block; color:#f1f7fa; font-size:17px; font-weight:bold; }
+.event-date { display:block; margin-top:5px; font-size:14px; color:#a9c0cf; }
+.event-del { float:right; color:#e9eff2; margin:2px 0 0 10px; }
+.agenda-quick { margin-top:7px; }
+.agenda-quick button { margin-right:8px; }
+.agenda-group { margin:16px 0 8px; font-size:18px; color:#a9d7e7; font-weight:bold; }
+.agenda-group:first-child { margin-top:0; }
+.agenda-count { color:#9db1bf; font-size:13px; font-weight:normal; }
+.agenda-past { opacity:.78; }
+.agenda-help { font-size:13px; color:#a5bbc8; }
+.agenda-time { font-weight:bold; color:#dfedf4; }
+
+.empty { color:#9db1bf; font-size:15px; margin:10px 0; }
+.footer { clear:both; padding-top:13px; color:#8b9fac; font-size:12px; }
+.notice { border-left:3px solid #6fa9c0; padding-left:14px; }
+.weather-summary { overflow:hidden; margin:10px 0 14px; }
+.weather-temp { float:left; font-size:67px; line-height:1.1; margin-right:22px; }
+.weather-details { padding-top:7px; font-size:18px; line-height:1.5; }
+.weather-descr { font-size:23px; color:#cdeaf5; }
+.weather-grid { overflow:hidden; margin:8px -5px 10px; }
+.weather-day { float:left; width:33.333%; padding:5px; }
+.weather-daybox { padding:13px; min-height:110px; background:#243b4a; border-radius:10px; }
+.weather-daybox strong { display:block; font-size:17px; margin-bottom:8px; }
+.weather-daybox span { display:block; font-size:15px; color:#c5d6e1; line-height:1.45; }
+.weather-updated { font-size:13px; color:#9db1bf; }
+@media (max-width:700px) { .weather-day { width:100%; } .weather-daybox { min-height:0; } .weather-temp { font-size:54px; } }
+@media (max-width:700px) {
+  body { padding:11px; }
+  .topbar { margin-bottom:9px; }
+  .logo { font-size:14px; }
+  .connection { font-size:12px; }
+  .nav button { min-width:0; width:18%; margin:0 1%; padding:10px 2px; font-size:13px; }
+  .hero { padding:16px; }
+  .hero-left { width:100%; float:none; }
+  .hero-right { float:none; width:100%; text-align:left; padding-top:10px; }
+  .hero-right .big { font-size:19px; margin-top:3px; }
+  .clock { font-size:72px; }
+  .date { font-size:18px; }
+  .tile-box { padding:13px; min-height:157px; }
+  .tile-title { font-size:17px; }
+  .tile-sub { font-size:14px; min-height:58px; }
+  .status { font-size:12px; }
+}
+@media (max-width:420px) {
+  .clock { font-size:62px; }
+  .tile { width:100%; }
+  .tile-box { min-height:0; }
+}
+
+/* Mode nuit doux pour un écran LCD ancien. Ne modifie pas la luminosité matérielle. */
+.display-tools { clear:both; overflow:hidden; margin:0 0 14px; }
+.display-tools button { float:right; min-height:39px; background:#284454; color:#f2f6f9; border:1px solid #567282; border-radius:8px; padding:7px 13px; font-size:15px; }
+.display-tools .hint { float:left; color:#9db1bf; padding-top:10px; font-size:13px; }
+body.night { background:#04070a; color:#d5dce1; }
+body.night .topbar { border-bottom-color:#1a2731; }
+body.night .nav button { background:#0a141b; color:#c5d1da; border-color:#1b303d; }
+body.night .nav button.active { background:#152a35; border-color:#386277; }
+body.night .hero, body.night .panel, body.night .tile-box { background:#0b151c; border-color:#1d303b; }
+body.night .tile-box:active, body.night .tile-box:focus { background:#162e39; }
+body.night .tile-sub, body.night p, body.night label { color:#aebfc9; }
+body.night .subtext, body.night .date, body.night .status, body.night .footer, body.night .muted { color:#8095a3; }
+body.night .clock { color:#c2cfd7; }
+body.night .tile-title .mark, body.night .hero-right .welcome { color:#669aac; }
+body.night .display-tools button { background:#14232d; color:#b7cbd6; border-color:#304a5a; }
+body.night .weather-daybox { background:#152630; }
+body.night .event { border-bottom-color:#1c303c; }
+body.night .event-name, body.night .weather-descr { color:#bdcdd6; }
+body.night .primary { background:#8dbbc9; }
+body.night .secondary { background:#142c38; }
+
+/* V2.7.1 : une ligne distincte par paire de villes pour Safari iOS 9.
+   Sans cela, une tuile un peu plus haute fait glisser la suivante à gauche. */
+.city-grid { overflow:hidden; margin:8px -5px 16px; }
+.city-row { clear:both; overflow:hidden; }
+.city-item { float:left; width:50%; padding:5px; }
+.city-button { display:block; width:100%; min-height:117px; border:1px solid #415c6d; border-radius:11px; padding:13px 15px; text-align:left; background:#213746; color:#edf4f8; -webkit-appearance:none; appearance:none; }
+.city-button.selected { border:2px solid #96d3e5; padding:12px 14px; background:#2b5264; }
+.city-name { display:block; font-size:19px; font-weight:bold; }
+.city-country { display:block; color:#c4d4de; font-size:13px; margin-top:3px; }
+.city-today { display:block; font-size:17px; margin-top:9px; }
+.city-time { display:block; color:#a5cad7; font-size:13px; margin-top:5px; }
+.city-time.big-time { font-size:16px; }
+.city-status { color:#b7c9d3; font-size:14px; line-height:1.45; }
+.weather-actions { margin:12px 0; }
+.weather-actions button { margin:0 8px 8px 0; }
+.city-headline { margin:7px 0 15px; color:#b5d1df; font-size:15px; }
+.city-main-title { color:#e8f4fb; font-size:24px; }
+body.night .city-button { background:#112631; border-color:#294554; }
+body.night .city-button.selected { background:#183543; border-color:#6daec5; }
+@media (max-width:420px) { .city-item { width:100%; } }
+
+/* V2.8 : tailles identiques pour les quatre tuiles de l'accueil.
+   Hauteur fixe + rognage du texte des événements très longs sur Safari 9. */
+.tile-grid .tile-box { height:166px; min-height:166px; overflow:hidden; }
+.tile-grid .tile-title { white-space:nowrap; text-overflow:ellipsis; overflow:hidden; }
+.tile-grid .tile-sub { height:50px; min-height:50px; overflow:hidden; word-wrap:break-word; }
+.tile-grid .tile-box .status { white-space:nowrap; text-overflow:ellipsis; overflow:hidden; }
+@media (max-width:700px) { .tile-grid .tile-box { height:174px; min-height:174px; } }
+.photo-entry { display:block; width:100%; margin:10px 0 2px; padding:14px 19px;
+ background:#213746; color:#edf4f8; border:1px solid #405c6c; border-radius:11px;
+ text-align:left; min-height:74px; }
+.photo-entry-title { display:block; font-size:20px; font-weight:bold; }
+.photo-entry-sub { display:block; font-size:13px; color:#c4d4de; margin-top:7px; }
+.photo-stage { position:relative; overflow:hidden; height:415px; background:#050a0e;
+ border:1px solid #2f4552; border-radius:10px; text-align:center; margin:12px 0; }
+.photo-stage img { display:none; max-width:100%; max-height:100%; width:auto; height:auto;
+ position:absolute; top:50%; left:50%; -webkit-transform:translate(-50%,-50%); transform:translate(-50%,-50%); }
+.photo-stage .photo-placeholder { position:absolute; width:100%; top:45%; left:0;
+ font-size:17px; color:#a9bdc8; padding:0 18px; }
+.photo-controls { overflow:hidden; padding:0 0 5px; }
+.photo-controls button { margin:0 7px 9px 0; }
+.photo-info { margin-top:8px; font-size:14px; color:#b9cbd7; min-height:19px; }
+.photo-help { font-size:13px; line-height:1.5; }
+.photo-frame-button { float:right; }
+body.night .photo-entry { background:#112631; border-color:#294554; }
+body.frame-mode { margin:0; padding:0; background:#020406; }
+body.frame-mode .topbar, body.frame-mode .nav, body.frame-mode .display-tools,
+body.frame-mode .footer, body.frame-mode #page-photos .photo-page-header,
+body.frame-mode #page-photos .photo-panel-bottom { display:none !important; }
+body.frame-mode #page-photos { display:block; }
+body.frame-mode #page-photos .panel { margin:0; padding:0; border:0; border-radius:0; background:#020406; }
+body.frame-mode .photo-stage { height:100vh; width:100%; margin:0; border:0; border-radius:0; }
+body.frame-mode #photo-exit-frame { display:block; position:fixed; z-index:20;
+ top:13px; right:13px; padding:9px 14px; background:rgba(18,35,45,.85);
+ border:1px solid #7393a5; border-radius:8px; color:white; font-size:16px; }
+#photo-exit-frame { display:none; }
+@media (max-width:700px) { .photo-stage { height:330px; } .photo-entry-title { font-size:18px; } }
+
+/* V2.9 : veille intelligente, compatible Safari iOS 9 (CSS classique). */
+.idle-settings { margin-top:12px; }
+.idle-settings h2 { margin-bottom:6px; }
+.idle-fields { overflow:hidden; margin:11px -6px 8px; }
+.idle-field { float:left; width:50%; padding:5px 6px; }
+.idle-field select { display:block; width:100%; min-height:44px; padding:8px;
+  color:#edf4f8; background:#284454; border:1px solid #537486;
+  border-radius:8px; font-family:Helvetica,Arial,sans-serif; font-size:16px; }
+.idle-test { margin:5px 8px 5px 0; }
+.idle-overlay { position:fixed; z-index:9999; left:0; top:0; width:100%; height:100%;
+  background:#020508; color:#f0f5f7; overflow:hidden; display:none;
+  -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; }
+.idle-overlay .idle-surface { position:absolute; left:0; top:0; right:0; bottom:0;
+  width:100%; height:100%; }
+.idle-clock-panel { position:absolute; width:100%; top:50%; left:0;
+  -webkit-transform:translateY(-50%); transform:translateY(-50%);
+  text-align:center; padding:22px; }
+.idle-clock-time { font-size:148px; line-height:1.1; font-weight:300; letter-spacing:-5px; }
+.idle-clock-date { font-size:30px; margin-top:12px; color:#b3c9d5; }
+.idle-clock-detail { font-size:17px; margin-top:18px; color:#89a4b4; }
+.idle-photo-layer { position:absolute; left:0; top:0; width:100%; height:100%; background:#020508; }
+.idle-photo-layer img { display:none; max-width:100%; max-height:100%; width:auto; height:auto;
+ position:absolute; left:50%; top:50%; -webkit-transform:translate(-50%,-50%);
+ transform:translate(-50%,-50%); }
+.idle-photo-time { position:absolute; top:18px; left:20px; font-size:38px;
+ padding:4px 12px; border-radius:8px; background:rgba(0,0,0,.58); color:#fff; }
+.idle-wake { position:absolute; bottom:18px; right:20px; border:1px solid rgba(220,235,242,.28);
+ background:rgba(0,0,0,.54); border-radius:8px; padding:9px 13px;
+ font-size:14px; color:#eef6f9; }
+body.night .idle-field select { background:#142c38; border-color:#355568; }
+@media (max-width:700px) {
+  .idle-clock-time { font-size:104px; letter-spacing:-3px; }
+  .idle-clock-date { font-size:23px; }
+  .idle-photo-time { font-size:30px; }
+}
+@media (max-width:420px) {
+  .idle-field { width:100%; }
+  .idle-clock-time { font-size:70px; }
+}
+.transfer-text { height:120px !important; font-size:13px; line-height:1.5; -webkit-user-select:text; user-select:text; }
+#photo-file-input { font-size:15px; min-height:44px; color:#eef6f9; }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="logo">MAISON / TABLEAU DE BORD</div>
+  <div class="connection"><strong>●</strong> GitHub Pages · données locales</div>
+</div>
+<div class="nav">
+  <button id="nav-home" type="button" class="active" onclick="showPage('home')">Accueil</button>
+  <button id="nav-agenda" type="button" onclick="showPage('agenda')">Agenda</button>
+  <button id="nav-notes" type="button" onclick="showPage('notes')">Notes</button>
+  <button id="nav-cameras" type="button" onclick="showPage('cameras')">Caméras</button>
+  <button id="nav-photos" type="button" onclick="showPage('photos')">Photos</button>
+</div>
+<div class="display-tools">
+  <span class="hint">Affichage mural : la luminosité reste réglable dans iOS.</span>
+  <button id="display-mode" type="button" onclick="cycleDisplayMode()">Affichage : Auto (21h–7h)</button>
+</div>
+<div class="page active" id="page-home">
+  <div class="hero">
+    <div class="hero-left">
+      <div class="clock" id="clock">--:--</div>
+      <div class="date" id="date">Chargement…</div>
+      <div class="subtext">Heure de l'iPad · affichage local</div>
+    </div>
+    <div class="hero-right">
+      <div class="welcome">Bienvenue</div>
+      <div class="big">À la maison</div>
+    </div>
+  </div>
+  <div class="tile-grid">
+    <!-- Une paire par ligne pour Safari 9. De vrais boutons pour le tactile iOS. -->
+    <div class="tile-row">
+      <div class="tile">
+        <button type="button" class="tile-box" onclick="showPage('weather')" aria-label="Ouvrir la météo">
+          <span class="tile-title"><span class="mark">☀</span>Météo</span>
+          <span class="tile-sub"><span id="weather-tile-summary">4 villes<br>Météo en cours de chargement…</span></span>
+          <span class="status">Toucher pour ouvrir</span>
+        </button>
+      </div>
+      <div class="tile">
+        <button type="button" class="tile-box" onclick="showPage('agenda')" aria-label="Ouvrir l'agenda familial">
+          <span class="tile-title"><span class="mark">▦</span>Agenda familial</span>
+          <span class="tile-sub" id="next-event">Aucun événement enregistré</span>
+          <span class="status ready">Toucher pour ouvrir l'agenda</span>
+        </button>
+      </div>
+    </div>
+    <div class="tile-row">
+      <div class="tile">
+        <button type="button" class="tile-box" onclick="showPage('cameras')" aria-label="Ouvrir la surveillance">
+          <span class="tile-title"><span class="mark">▣</span>Caméras</span>
+          <span class="tile-sub">Tapo C320WS · Garage</span>
+          <span class="status">Toucher pour ouvrir · flux non connecté</span>
+        </button>
+      </div>
+      <div class="tile">
+        <button type="button" class="tile-box" onclick="showPage('notes')" aria-label="Ouvrir les notes">
+          <span class="tile-title"><span class="mark">✎</span>Notes</span>
+          <span class="tile-sub" id="notes-preview">Touchez « Notes » pour écrire un mémo.</span>
+          <span class="status ready">Toucher pour ouvrir les notes</span>
+        </button>
+      </div>
+    </div>
+  </div>
+  <button class="photo-entry" type="button" onclick="showPage('photos')" aria-label="Ouvrir le diaporama photos">
+    <span class="photo-entry-title">▧ &nbsp;Diaporama familial</span>
+    <span class="photo-entry-sub" id="photo-count-home">Photos privées sur l’iPad · Toucher pour ouvrir</span>
+  </button>
+
+  <div class="panel idle-settings">
+    <h2>Veille intelligente</h2>
+    <p>Après une période sans toucher l’écran, affiche automatiquement les photos ou une grande horloge. Un toucher ramène à la page précédente.</p>
+    <div class="idle-fields">
+      <div class="idle-field">
+        <label for="idle-mode-choice">Afficher pendant la veille</label>
+        <select id="idle-mode-choice" onchange="changeIdlePreferences()">
+          <option value="photos">Diaporama familial</option>
+          <option value="clock">Grande horloge</option>
+          <option value="off">Désactivé</option>
+        </select>
+      </div>
+      <div class="idle-field">
+        <label for="idle-delay-choice">Délai sans activité</label>
+        <select id="idle-delay-choice" onchange="changeIdlePreferences()">
+          <option value="120000">2 minutes</option>
+          <option value="300000">5 minutes</option>
+          <option value="600000">10 minutes</option>
+          <option value="900000">15 minutes</option>
+          <option value="1800000">30 minutes</option>
+        </select>
+      </div>
+    </div>
+    <button type="button" class="secondary idle-test" onclick="previewIdle()">Tester la veille maintenant</button>
+    <p class="muted small" id="idle-settings-status">Par défaut : diaporama après 5 minutes. Sans photo disponible, l’horloge prend le relais.</p>
+    <p class="muted small">La veille visuelle ne remplace pas le verrouillage de l’iPad et ne désactive pas sa mise en veille matérielle. Pour l'affichage continu, vérifie les réglages iOS et la batterie.</p>
+  </div>
+</div>
+<div class="page" id="page-agenda">
+  <div class="panel">
+    <h1>Agenda familial</h1>
+    <p>Ajoute un rendez-vous ou une activité familiale. L'heure est facultative. Les événements restent sur cet iPad. Fais une copie manuelle dans « Notes » pour les conserver.</p>
+    <div class="field"><label for="event-title">Événement</label><input id="event-title" type="text" maxlength="100" placeholder="Ex. Rendez-vous, anniversaire"></div>
+    <div class="field">
+      <label for="event-date">Date (JJ/MM/AAAA)</label><input id="event-date" type="text" maxlength="10" placeholder="Ex. 25/11/2026">
+      <div class="agenda-quick"><button class="secondary smallbtn" type="button" onclick="setEventDate('today')">Aujourd'hui</button><button class="secondary smallbtn" type="button" onclick="setEventDate('tomorrow')">Demain</button></div>
+    </div>
+    <div class="field"><label for="event-time">Heure facultative (HH:MM)</label><input id="event-time" type="text" maxlength="5" placeholder="Ex. 14:30"><div class="agenda-help">Laisse vide pour un événement sans heure précise.</div></div>
+    <button class="primary" type="button" onclick="addEvent()">Ajouter l'événement</button>
+    <div class="message" id="agenda-message" aria-live="polite"></div>
+  </div>
+  <div class="panel"><h2>Planning familial</h2><div id="events-list" class="empty">Aucun événement enregistré.</div><p class="agenda-help">Les événements anciens restent disponibles jusqu'à leur suppression. La suppression demande confirmation.</p></div>
+</div>
+<div class="page" id="page-notes">
+  <div class="panel">
+    <h1>Notes de la maison</h1>
+    <p>Un mémo simple pour la famille (courses, rappel, message). Il est enregistré uniquement sur cet iPad. Une sauvegarde manuelle peut être copiée via le panneau ci-dessous.</p>
+    <div class="field"><label for="notes-input">Votre note</label><textarea id="notes-input" placeholder="Écrivez ici…"></textarea></div>
+    <button class="primary" type="button" onclick="saveNotes()">Enregistrer la note</button>
+    <div class="message" id="notes-message"></div>
+  </div>
+  <div class="panel">
+    <h2>Sauvegarde et transfert privés</h2>
+    <p>Les notes, rendez-vous et préférences restent dans Safari sur cet iPad. Pour les sauvegarder, crée une copie du texte ci-dessous et conserve-la dans un endroit privé. <strong>Aucune donnée n'est envoyée vers GitHub.</strong></p>
+    <button class="primary" type="button" onclick="showBackupCopy()">Préparer une copie</button>
+    <button class="secondary" type="button" onclick="importBackupCopy()">Restaurer le texte collé</button>
+    <div class="field" style="margin-top:12px"><label for="backup-copy">Copie / transfert (JSON)</label><textarea id="backup-copy" class="transfer-text" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Appuie sur « Préparer une copie », ou colle ici le texte généré par l’ancienne V3.0."></textarea></div>
+    <div class="message" id="backup-message" aria-live="polite"></div>
+    <p class="muted small">La restauration demande confirmation puis remplace les données locales. Les copies contiennent tes informations personnelles : ne les publie jamais dans ton dépôt GitHub. Le stockage Safari peut être effacé par iOS.</p>
+  </div>
+</div>
+<div class="page" id="page-cameras">
+  <div class="panel">
+    <h1>Surveillance</h1>
+    <h2>Tapo C320WS – Garage</h2>
+    <p class="notice">La caméra reste en attente, comme prévu. Un site GitHub Pages ne peut pas lire directement un flux RTSP de caméra locale.</p>
+    <p class="muted small">Aucune image de caméra n'est affichée et aucun accès à la caméra n'est effectué par cette page.</p>
+  </div>
+</div>
+<div class="page" id="page-weather">
+  <div class="panel">
+    <h1>Météo internationale</h1>
+    <p>Conditions actuelles et prévisions pour Bruxelles, Vacoas, Avellino et Flic-en-Flac. Appuie sur une ville pour voir le détail.</p>
+    <div id="cities-loading" class="city-status">Chargement des quatre villes…</div>
+    <div id="city-grid" class="city-grid"></div>
+    <div style="clear:both"></div>
+    <div id="city-detail-title" class="city-main-title">Bruxelles</div>
+    <div class="city-headline" id="city-detail-subtitle">Belgique</div>
+    <div id="weather-loading" class="notice">Chargement des données météo…</div>
+    <div id="weather-content" style="display:none">
+      <div class="weather-summary">
+        <div class="weather-temp" id="weather-temperature">-- °C</div>
+        <div class="weather-details">
+          <div class="weather-descr" id="weather-description">—</div>
+          <div id="weather-feels">Ressenti : —</div>
+          <div id="weather-humidity">Humidité : —</div>
+          <div id="weather-wind">Vent : —</div>
+        </div>
+      </div>
+      <h2>Prévisions pour trois jours</h2>
+      <div id="weather-forecast" class="weather-grid"></div>
+      <div style="clear:both"></div>
+      <p class="weather-updated" id="weather-updated"></p>
+    </div>
+    <div class="weather-actions">
+      <button class="primary" type="button" onclick="makeWeatherMain()" id="weather-set-main">Ville principale : Bruxelles</button>
+      <button class="secondary" type="button" onclick="loadWeather()">Actualiser</button>
+      <button class="secondary" type="button" onclick="showPage('home')">Retour à l'accueil</button>
+    </div>
+    <p class="muted small">Source : <a style="color:#9ad3e2" href="https://open-meteo.com/">Open-Meteo</a>. Prévisions issues de modèles météorologiques et non de stations situées dans chaque ville. La météo est mise en fichier par une tâche GitHub planifiée (environ chaque heure, horaires non garantis) ; l’iPad ne contacte plus directement Open-Meteo. Actualisation du navigateur toutes les 15 minutes.</p>
+  </div>
+</div>
+
+<div class="page" id="page-photos">
+  <div class="panel">
+    <div class="photo-page-header">
+      <h1>Diaporama familial</h1>
+      <p>Deux photos de démonstration sont incluses pour vérifier le diaporama. Tu peux essayer d’ajouter des photos personnelles depuis la photothèque : si l’import fonctionne, elles seront conservées <strong>uniquement dans Safari</strong>, et ne seront jamais envoyées sur GitHub. Cette fonction reste expérimentale sur iOS 9. La galerie de démonstration est publique, pas tes photos personnelles.</p>
+      <div class="field" style="margin-top:11px"><label for="photo-file-input">Tester l’import d’une photo privée depuis l’iPad (une à la fois)</label><input type="file" id="photo-file-input" accept="image/*" onchange="addPrivatePhotos(this)"></div>
+      <button class="secondary smallbtn" type="button" onclick="removePrivatePhotos()">Effacer les photos stockées sur l’iPad</button>
+      <div id="photo-status" class="photo-info" aria-live="polite">Lecture de la galerie privée…</div>
+    </div>
+    <div class="photo-stage" id="photo-stage">
+      <img id="photo-image" alt="Photo du diaporama" onload="photoLoadedOk()" onerror="photoLoadError()">
+      <div class="photo-placeholder" id="photo-placeholder">Ajoute quelques photos depuis la photothèque de l’iPad à l’aide du bouton ci-dessus.</div>
+    </div>
+    <button id="photo-exit-frame" type="button" onclick="togglePhotoFrame()">Quitter le mode cadre</button>
+    <div class="photo-panel-bottom">
+      <div class="photo-controls">
+        <button class="secondary" type="button" onclick="photoPrevious()">◀ Précédente</button>
+        <button class="primary" type="button" id="photo-play" onclick="togglePhotoPlay()">Pause</button>
+        <button class="secondary" type="button" onclick="photoNext()">Suivante ▶</button>
+        <button class="secondary" type="button" id="photo-speed" onclick="cyclePhotoSpeed()">10 s / photo</button>
+        <button class="secondary" type="button" onclick="togglePhotoFrame()">Mode cadre</button>
+        <button class="secondary" type="button" onclick="loadPhotos()">Actualiser</button>
+      </div>
+      <div class="photo-info" id="photo-caption">Aucune photo chargée.</div>
+      <p class="photo-help muted">Les deux images de démonstration sont publiques. Si tu ajoutes des fichiers au dépôt GitHub, ils seront aussi publics : <strong>n’y dépose aucune photo familiale privée</strong>. L’import depuis la photothèque est expérimental sur iOS 9 et peut échouer. Conserve tes originaux ailleurs.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Couche de veille autonome : ne remplace ni la page ni son contenu. -->
+<div id="idle-overlay" class="idle-overlay" role="button" tabindex="0"
+     aria-label="Toucher pour quitter la veille" onclick="wakeIdle(event)" ontouchstart="wakeIdle(event)">
+  <div class="idle-surface">
+    <div id="idle-clock-layer" class="idle-clock-panel">
+      <div class="idle-clock-time" id="idle-clock-time">--:--</div>
+      <div class="idle-clock-date" id="idle-clock-date">&nbsp;</div>
+      <div class="idle-clock-detail" id="idle-clock-detail">Heure locale</div>
+    </div>
+    <div id="idle-photo-layer" class="idle-photo-layer" style="display:none">
+      <img id="idle-photo-image" alt="Photo familiale" onload="idlePhotoLoaded()" onerror="idlePhotoError()">
+      <div class="idle-photo-time" id="idle-photo-time">--:--</div>
+    </div>
+    <div class="idle-wake">Toucher pour revenir</div>
+  </div>
+</div>
+<div class="footer">Tableau de bord V3.1.1 · iPad 2 / Safari iOS 9 · météo via GitHub et galerie de test</div>
+<script>
+/* JavaScript ES5 : compatible avec Safari 9. */
+(function () {
+  var days=['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
+  var months=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+  var events=[];
+  var photoList=[],photoIndex=0,photoTimer=null,photoInterval=10000;
+  var photoPlaying=true,photoFrameActive=false,photoListReady=false;
+  var idleActive=false, idleMode='photos', idleDelay=300000;
+  var idleLastActivity=(new Date()).getTime(), idlePhotoIndex=0, idlePhotoTimer=null;
+
+  var savedPhotoDelay=null;
+  try { savedPhotoDelay=window.localStorage.getItem('ipad_mural_photo_delay_v28'); } catch(e) {}
+  if(savedPhotoDelay==='5000' || savedPhotoDelay==='10000' || savedPhotoDelay==='20000') photoInterval=Number(savedPhotoDelay);
+  function el(id) { return document.getElementById(id); }
+  function pad(n) { return n<10 ? '0'+n : ''+n; }
+  function escapeHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+  function todayIso() { var d=new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+  function store(key,value) { try { window.localStorage.setItem(key,value); return true; } catch(e) { return false; } }
+  function load(key) { try { return window.localStorage.getItem(key); } catch(e) { return null; } }
+  function updateClock() {
+    var d=new Date();
+    el('clock').innerHTML=pad(d.getHours())+':'+pad(d.getMinutes());
+    el('date').innerHTML=days[d.getDay()]+' '+d.getDate()+' '+months[d.getMonth()]+' '+d.getFullYear();
+  }
+  function parseDate(value) {
+    var m=/^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value);
+    if(!m) return null;
+    var day=Number(m[1]),month=Number(m[2]),year=Number(m[3]);
+    var check=new Date(year,month-1,day);
+    if(check.getFullYear()!==year || check.getMonth()!==(month-1) || check.getDate()!==day) return null;
+    return year+'-'+pad(month)+'-'+pad(day);
+  }
+  function prettyDate(iso) { var p=iso.split('-'); return p[2]+'/'+p[1]+'/'+p[0]; }
+  function parseTime(value) {
+    if(value==='') return '';
+    var m=/^(\d{2}):(\d{2})$/.exec(value);
+    if(!m || Number(m[1])>23 || Number(m[2])>59) return null;
+    return value;
+  }
+  function isoForOffset(daysAfter) {
+    var d=new Date();
+    d.setHours(12,0,0,0); // midi local : évite les décalages de fuseau/DST
+    d.setDate(d.getDate()+daysAfter);
+    return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+  }
+  window.setEventDate=function(which) {
+    el('event-date').value=prettyDate(isoForOffset(which==='tomorrow'?1:0));
+  };
+  function sortedEvents() {
+    return events.slice().sort(function(a,b){
+      if(a.date!==b.date) return a.date<b.date?-1:1;
+      var at=a.time||'',bt=b.time||'';
+      if(at!==bt) return at<bt?-1:1;
+      return a.id-b.id;
+    });
+  }
+  function eventDateLabel(iso) {
+    if(iso===todayIso()) return 'Aujourd’hui · '+prettyDate(iso);
+    if(iso===isoForOffset(1)) return 'Demain · '+prettyDate(iso);
+    return prettyDate(iso);
+  }
+  function eventMarkup(row,past) {
+    var when=escapeHtml(eventDateLabel(row.date));
+    if(row.time) when+=' · <span class="agenda-time">'+escapeHtml(row.time)+'</span>';
+    return '<div class="event'+(past?' agenda-past':'')+'"><button type="button" class="secondary smallbtn event-del" onclick="deleteEvent('+row.id+')">Supprimer</button><span class="event-name">'+escapeHtml(row.title)+'</span><span class="event-date">'+when+'</span></div>';
+  }
+  function refreshEvents() {
+    var arr=sortedEvents(),upcoming=[],week=[],later=[],past=[],i,row,out='';
+    var now=todayIso(),end=isoForOffset(6);
+    for(i=0;i<arr.length;i++) {
+      row=arr[i];
+      if(row.date<now) past.push(row);
+      else {
+        upcoming.push(row);
+        if(row.date<=end) week.push(row); else later.push(row);
+      }
+    }
+    if (upcoming.length) {
+      row=upcoming[0];
+      el('next-event').innerHTML=escapeHtml(row.title)+'<br>'+escapeHtml(eventDateLabel(row.date))+(row.time?' à '+escapeHtml(row.time):'');
+    } else {
+      el('next-event').innerHTML='Aucun événement à venir';
+    }
+    if(!arr.length) { el('events-list').innerHTML='<div class="empty">Aucun événement enregistré.</div>'; return; }
+    if(week.length) {
+      out+='<div class="agenda-group">7 prochains jours <span class="agenda-count">('+week.length+')</span></div>';
+      for(i=0;i<week.length;i++) out+=eventMarkup(week[i],false);
+    }
+    if(later.length) {
+      out+='<div class="agenda-group">Plus tard <span class="agenda-count">('+later.length+')</span></div>';
+      for(i=0;i<later.length;i++) out+=eventMarkup(later[i],false);
+    }
+    if(past.length) {
+      out+='<div class="agenda-group">Événements passés <span class="agenda-count">('+past.length+')</span></div>';
+      for(i=past.length-1;i>=0;i--) out+=eventMarkup(past[i],true);
+    }
+    el('events-list').innerHTML=out;
+  }
+  function refreshNotePreview() {
+    var t=el('notes-input').value;
+    el('notes-preview').innerHTML=t ? escapeHtml(t.substring(0,95)) : 'Touchez « Notes » pour écrire un mémo.';
+  }
+  window.showPage=function(name) {
+    var ids=['home','agenda','notes','cameras','weather','photos'],i,active;
+    if(name!=='photos') {
+      photoFrameActive=false;
+      if(photoTimer) { window.clearInterval(photoTimer); photoTimer=null; }
+      updateDisplayMode();
+    }
+    for(i=0;i<ids.length;i++) {
+      active=(ids[i]===name);
+      el('page-'+ids[i]).className=active?'page active':'page';
+      if(ids[i]!=='weather') {
+        el('nav-'+ids[i]).className=(active || (name==='weather' && ids[i]==='home'))?'active':'';
+      }
+    }
+    window.scrollTo(0,0);
+    if(name==='photos') {
+      if(!photoListReady) loadPhotos();
+      else { photoShowCurrent(); photoSchedule(); }
+    }
+  };
+  window.addEvent=function() {
+    var title=el('event-title').value.replace(/^\s+|\s+$/g,'');
+    var date=parseDate(el('event-date').value.replace(/^\s+|\s+$/g,''));
+    var time=parseTime(el('event-time').value.replace(/^\s+|\s+$/g,''));
+    if(!title || !date || time===null) { el('agenda-message').innerHTML='Vérifie le titre, la date (JJ/MM/AAAA) et l’heure éventuelle (HH:MM).'; return; }
+    if(events.length>=250) { el('agenda-message').innerHTML='Limite de 250 événements atteinte. Supprime un ancien événement.'; return; }
+    var maxId=new Date().getTime(),i;
+    for(i=0;i<events.length;i++) if(events[i].id>=maxId) maxId=events[i].id+1;
+    var item={id:maxId,title:title,date:date};
+    if(time!=='') item.time=time;
+    events.push(item);
+    if(!store('ipad_mural_events_v2',JSON.stringify(events))) {
+      events.pop();
+      el('agenda-message').innerHTML='Stockage local indisponible. L’événement n’a pas été ajouté.';
+      return;
+    }
+    el('agenda-message').innerHTML='Événement ajouté. Prépare une copie dans « Notes » après tes modifications importantes.';
+    el('event-title').value='';el('event-time').value='';
+    window.setEventDate('today');
+    refreshEvents();
+  };
+  window.deleteEvent=function(id) {
+    var newEvents=[],i,row=null;
+    for(i=0;i<events.length;i++) {
+      if(events[i].id===id) row=events[i]; else newEvents.push(events[i]);
+    }
+    if(!row) return;
+    if(!window.confirm('Supprimer « '+row.title+' » du '+prettyDate(row.date)+' ?')) return;
+    if(!store('ipad_mural_events_v2',JSON.stringify(newEvents))) {
+      el('agenda-message').innerHTML='Impossible de supprimer : stockage local indisponible.';
+      return;
+    }
+    events=newEvents;
+    el('agenda-message').innerHTML='Événement supprimé.';
+    refreshEvents();
+  };
+  /* Météo internationale via Python : ES5 uniquement, Safari iOS 9. */
+  var cityInfo=[
+    {id:'bruxelles',name:'Bruxelles',country:'Belgique',lat:50.8503,lon:4.3517,tz:'Europe/Brussels'},
+    {id:'vacoas',name:'Vacoas',country:'Maurice',lat:-20.294079,lon:57.490768,tz:'Indian/Mauritius'},
+    {id:'avellino',name:'Avellino',country:'Italie',lat:40.91494,lon:14.79103,tz:'Europe/Rome'},
+    {id:'flic-en-flac',name:'Flic-en-Flac',country:'Maurice',lat:-20.27865,lon:57.3721538,tz:'Indian/Mauritius'}
+  ];
+  var cityData={};
+  var selectedCity='bruxelles';
+  var mainCity=load('ipad_mural_main_city_v27')||'bruxelles';
+  function cityById(id) {
+    var i; for(i=0;i<cityInfo.length;i++) if(cityInfo[i].id===id) return cityInfo[i];
+    return null;
+  }
+  if(!cityById(mainCity)) mainCity='bruxelles';
+  selectedCity=mainCity;
+  function weatherDescription(code) {
+    code=Number(code);
+    if(code===0) return 'Ciel dégagé';
+    if(code===1 || code===2) return 'Peu nuageux';
+    if(code===3) return 'Couvert';
+    if(code===45 || code===48) return 'Brouillard';
+    if(code>=51 && code<=57) return 'Bruine';
+    if((code>=61 && code<=67) || (code>=80 && code<=82)) return 'Pluie';
+    if(code>=71 && code<=77 || code===85 || code===86) return 'Neige';
+    if(code>=95) return 'Orage';
+    return 'Conditions variables';
+  }
+  function roundValue(v) { return (typeof v==='number' && isFinite(v)) ? Math.round(v) : '—'; }
+  function isNumber(v) { return typeof v==='number' && isFinite(v); }
+  function localClock(offset) {
+    if(typeof offset!=='number' || !isFinite(offset)) return '—';
+    var moment=new Date((new Date()).getTime()+offset*1000);
+    return pad(moment.getUTCHours())+':'+pad(moment.getUTCMinutes());
+  }
+  function setCityError(msg) {
+    el('weather-content').style.display='none';
+    el('weather-loading').style.display='block';
+    el('weather-loading').innerHTML=escapeHtml(msg);
+  }
+  function drawCityCards() {
+    var out='',i,info,data,cur,label,temp,desc,tm;
+    for(i=0;i<cityInfo.length;i++) {
+      /* On verrouille les paires : Bruxelles/Vacoas, Avellino/Flic-en-Flac. */
+      if(i%2===0) out+='<div class="city-row">';
+      info=cityInfo[i];data=cityData[info.id];
+      label='Indisponible';tm='Heure locale : —';
+      if(data && data.current) {
+        cur=data.current;
+        temp=isNumber(cur.temperature_2m)?roundValue(cur.temperature_2m)+' °C':'—';
+        desc=weatherDescription(cur.weather_code);
+        label=temp+' · '+desc;
+        tm='Heure locale : '+localClock(data.utc_offset_seconds);
+        if(data.stale) label+=' (dernières données)';
+      }
+      out+='<div class="city-item"><button type="button" class="city-button'+(selectedCity===info.id?' selected':'')+'" onclick="selectWeatherCity(\''+info.id+'\')">'
+          +'<span class="city-name">'+escapeHtml(info.name)+(mainCity===info.id?' ★':'')+'</span>'
+          +'<span class="city-country">'+escapeHtml(info.country)+'</span>'
+          +'<span class="city-today">'+escapeHtml(label)+'</span>'
+          +'<span class="city-time">'+escapeHtml(tm)+'</span></button></div>';
+      if(i%2===1 || i===cityInfo.length-1) out+='</div>';
+    }
+    el('city-grid').innerHTML=out;
+    /* Même hauteur pour les deux boutons de chaque ligne, sans dépendance CSS moderne. */
+    var rows=el('city-grid').getElementsByClassName('city-row'),r,buttons,j,tallest;
+    for(r=0;r<rows.length;r++) {
+      buttons=rows[r].getElementsByTagName('button');
+      tallest=0;
+      for(j=0;j<buttons.length;j++) {
+        buttons[j].style.height='auto';
+        if(buttons[j].offsetHeight>tallest) tallest=buttons[j].offsetHeight;
+      }
+      for(j=0;j<buttons.length;j++) buttons[j].style.height=tallest+'px';
+    }
+  }
+  function updateMainWeatherTile() {
+    var info=cityById(mainCity),d=cityData[mainCity],msg;
+    if(d && d.current && isNumber(d.current.temperature_2m)) {
+      msg=info.name+'<br>'+roundValue(d.current.temperature_2m)+' °C · '+escapeHtml(weatherDescription(d.current.weather_code));
+      if(d.stale) msg+=' (ancien)';
+    } else msg=info.name+'<br>Météo indisponible';
+    el('weather-tile-summary').innerHTML=msg+'<br><span class="small">4 villes à consulter</span>';
+  }
+  function showSelectedWeather() {
+    var info=cityById(selectedCity),data=cityData[selectedCity],cur,daily,i,str='',label,high,low,code,stamp;
+    if(!info) return;
+    el('city-detail-title').innerHTML=escapeHtml(info.name);
+    el('city-detail-subtitle').innerHTML=escapeHtml(info.country)+' · Heure locale : '+escapeHtml(data?localClock(data.utc_offset_seconds):'—');
+    el('weather-set-main').innerHTML=(selectedCity===mainCity?'Ville principale : ':'Définir comme ville principale : ')+escapeHtml(info.name);
+    if(!data || !data.current || !data.daily || !data.daily.time || !isNumber(data.current.temperature_2m)) {
+      setCityError('Les données de '+info.name+' sont momentanément indisponibles. Réessaie plus tard.');
+      return;
+    }
+    cur=data.current;daily=data.daily;
+    el('weather-temperature').innerHTML=roundValue(cur.temperature_2m)+' °C';
+    el('weather-description').innerHTML=escapeHtml(weatherDescription(cur.weather_code));
+    el('weather-feels').innerHTML='Ressenti : '+roundValue(cur.apparent_temperature)+' °C';
+    el('weather-humidity').innerHTML='Humidité : '+roundValue(cur.relative_humidity_2m)+' %';
+    el('weather-wind').innerHTML='Vent : '+roundValue(cur.wind_speed_10m)+' km/h';
+    for(i=0;i<Math.min(3,daily.time.length);i++) {
+      label=i===0?'Aujourd’hui':(i===1?'Demain':'Après-demain');
+      code=daily.weather_code && daily.weather_code.length>i?daily.weather_code[i]:-1;
+      high=daily.temperature_2m_max && daily.temperature_2m_max.length>i?roundValue(daily.temperature_2m_max[i]):'—';
+      low=daily.temperature_2m_min && daily.temperature_2m_min.length>i?roundValue(daily.temperature_2m_min[i]):'—';
+      str+='<div class="weather-day"><div class="weather-daybox"><strong>'+label+'</strong><span>'+escapeHtml(weatherDescription(code))+'</span><span>Max '+high+' °C · Min '+low+' °C</span></div></div>';
+    }
+    el('weather-forecast').innerHTML=str;
+    stamp=cur.time?String(cur.time).replace('T',' à '):'heure non précisée';
+    el('weather-updated').innerHTML='Données pour '+escapeHtml(info.name)+' : '+escapeHtml(stamp)+(data.stale?' · données en cache, mise à jour indisponible':'')+'.';
+    el('weather-loading').style.display='none';
+    el('weather-content').style.display='block';
+  }
+  window.selectWeatherCity=function(id) {
+    if(!cityById(id)) return;
+    selectedCity=id;
+    drawCityCards();showSelectedWeather();
+  };
+  window.makeWeatherMain=function() {
+    if(selectedCity===mainCity) return;
+    mainCity=selectedCity;
+    store('ipad_mural_main_city_v27',mainCity);
+    drawCityCards();showSelectedWeather();updateMainWeatherTile();
+  };
+  /* V3.1.1 : météo servie par GitHub Pages depuis weather.json (même origine HTTPS).
+     L'iPad n'interroge plus Open-Meteo. Le fichier est généré par GitHub Actions. */
+  var weatherBusy=false;
+  function weatherCacheSave() {
+    try { store('ipad_mural_weather_cache_v31', JSON.stringify(cityData)); } catch(e) {}
+  }
+  function weatherInitCached() {
+    try {
+      var saved=JSON.parse(load('ipad_mural_weather_cache_v31')||'{}'),i,d;
+      for(i=0;i<cityInfo.length;i++) {
+        d=saved[cityInfo[i].id];
+        if(d && d.current && d.daily && d.daily.time) {
+          d.stale=true; cityData[cityInfo[i].id]=d;
+        }
+      }
+    } catch(e) {}
+  }
+  weatherInitCached();
+  window.loadWeather=function() {
+    if(weatherBusy) return;
+    weatherBusy=true;
+    el('cities-loading').innerHTML='Chargement de la météo depuis GitHub Pages…';
+    var xhr=new XMLHttpRequest(),finished=false;
+    var timer=window.setTimeout(function(){
+      if(finished) return;
+      try { xhr.abort(); } catch(ignore) {}
+      finish(false,null,'délai dépassé');
+    },20000);
+    function finish(ok,payload,detail) {
+      if(finished) return;
+      finished=true; weatherBusy=false; window.clearTimeout(timer);
+      var successes=0,i,info,item,stale=false,stamp='';
+      if(ok && payload && payload.cities) {
+        stamp=String(payload.updated_at_utc||'');
+        var createdAt=Date.parse(stamp);
+        stale=(isNaN(createdAt) || ((new Date()).getTime()-createdAt > 6*3600000));
+        for(i=0;i<cityInfo.length;i++) {
+          info=cityInfo[i];item=payload.cities[info.id];
+          if(item && item.current && item.daily && item.daily.time &&
+            isNumber(item.current.temperature_2m) && isNumber(item.utc_offset_seconds)) {
+            item.stale=stale;
+            cityData[info.id]=item;
+            successes++;
+          }
+        }
+        weatherCacheSave();
+      }
+      if(successes) {
+        el('cities-loading').innerHTML=successes+' ville(s) chargée(s). Dernière récupération : '+
+          escapeHtml(stamp.slice(0,16).replace('T',' ')+' UTC')+
+          (stale?' · Données anciennes (GitHub n’a pas actualisé le fichier).':'');
+      } else {
+        for(i=0;i<cityInfo.length;i++) if(cityData[cityInfo[i].id]) successes++;
+        el('cities-loading').innerHTML=(successes?'Dernières prévisions conservées en cache. ':'Météo non chargée. ')+
+          'Vérifie sur GitHub Actions que « Publier iPad Mural et météo » a réussi'+
+          (detail?' ('+escapeHtml(detail)+')':'')+'.';
+      }
+      drawCityCards();showSelectedWeather();updateMainWeatherTile();
+    }
+    try {
+      xhr.open('GET','weather.json?t='+((new Date()).getTime()),true);
+      xhr.onreadystatechange=function() {
+        if(xhr.readyState!==4 || finished) return;
+        var obj=null;
+        if(xhr.status===200) {try{obj=JSON.parse(xhr.responseText);}catch(e){}}
+        finish(!!(obj && obj.cities),obj,'HTTP '+xhr.status);
+      };
+      xhr.onerror=function(){finish(false,null,'connexion');};
+      xhr.send(null);
+    } catch(e) {finish(false,null,'requête impossible');}
+  };
+  /* Les fuseaux sont calculés à partir des offsets renvoyés par l'API; actualisés toutes les 15 min. */
+  window.setInterval(function() {
+    if(el('page-weather').className.indexOf('active')!==-1) {
+      drawCityCards();showSelectedWeather();
+    }
+  },60000);
+  /* V3.1 : transfert local via copier/coller, sans serveur ni téléversement de données privées. */
+  function backupMessage(message) { el('backup-message').innerHTML=escapeHtml(message); }
+  var prefKeys=['ipad_mural_main_city_v27','ipad_mural_display_mode_v24',
+    'ipad_mural_idle_mode_v29','ipad_mural_idle_delay_v29','ipad_mural_photo_delay_v28'];
+  window.showBackupCopy=function() {
+    var savedNote=load('ipad_mural_notes_v2')||'',p={},i;
+    if(el('notes-input').value!==savedNote) {
+      backupMessage('Enregistre d’abord la note avec « Enregistrer la note ».'); return;
+    }
+    for(i=0;i<prefKeys.length;i++) p[prefKeys[i]]=load(prefKeys[i]);
+    var b={schema:2,notes:savedNote,events:events,preferences:p};
+    el('backup-copy').value=JSON.stringify(b);
+    backupMessage('Copie tout le texte ci-dessus et conserve-le dans un endroit privé, hors GitHub.');
+  };
+  window.importBackupCopy=function() {
+    var raw=el('backup-copy').value, b=null, i,e,keys,backup={};
+    if(!raw || raw.length>200000) { backupMessage('Texte vide ou trop volumineux.'); return; }
+    try { b=JSON.parse(raw); } catch(err) { backupMessage('Texte de sauvegarde invalide.'); return; }
+    if(b && b.backup && b.backup.schema===1) b=b.backup;
+    if(!b || (b.schema!==1 && b.schema!==2) || typeof b.notes!=='string' || b.notes.length>80000 ||
+       Object.prototype.toString.call(b.events)!=='[object Array]' || b.events.length>250) {
+      backupMessage('Format de sauvegarde non reconnu.'); return;
+    }
+    for(i=0;i<b.events.length;i++) {
+      e=b.events[i];
+      if(!e || typeof e.id!=='number' || !isFinite(e.id) ||
+         typeof e.title!=='string' || e.title.length>500 ||
+         typeof e.date!=='string' || !/^\d{4}-\d{2}-\d{2}$/.test(e.date) ||
+         (typeof e.time!=='undefined' && (typeof e.time!=='string' || !/^\d{2}:\d{2}$/.test(e.time)))) {
+        backupMessage('Un rendez-vous a un format invalide. Restauration annulée.'); return;
+      }
+    }
+    if(!window.confirm('Importer '+b.events.length+' événement(s) et la note ? Cela remplacera les données actuelles de cet iPad.')) {
+      backupMessage('Importation annulée.'); return;
+    }
+    keys=['ipad_mural_notes_v2','ipad_mural_events_v2'];
+    if(b.schema===2 && b.preferences) {
+      for(i=0;i<prefKeys.length;i++) {
+        if(typeof b.preferences[prefKeys[i]]==='string') keys.push(prefKeys[i]);
+      }
+    }
+    for(i=0;i<keys.length;i++) backup[keys[i]]=load(keys[i]);
+    var success=store('ipad_mural_notes_v2',b.notes) &&
+      store('ipad_mural_events_v2',JSON.stringify(b.events));
+    if(success && b.schema===2 && b.preferences) {
+      for(i=0;i<prefKeys.length;i++) {
+        if(typeof b.preferences[prefKeys[i]]==='string') {
+          if(!store(prefKeys[i],b.preferences[prefKeys[i]])) success=false;
+        }
+      }
+    }
+    if(!success) {
+      for(i=0;i<keys.length;i++) {
+        if(backup[keys[i]]!==null) store(keys[i],backup[keys[i]]);
+        else try {window.localStorage.removeItem(keys[i]);} catch(err) {}
+      }
+      backupMessage('Stockage Safari insuffisant : aucune restauration validée.'); return;
+    }
+    window.alert('Restauration réussie. La page va se recharger pour appliquer les préférences.');
+    window.location.reload();
+  };
+
+  /* Diaporama V2.8 : photos locales listées par le serveur, Safari iOS 9 / ES5. */
+  function photosVisible() { return el('page-photos').className.indexOf('active')!==-1; }
+  function photoSchedule() {
+    if(photoTimer) { window.clearInterval(photoTimer); photoTimer=null; }
+    if(photoPlaying && photosVisible() && !idleActive && photoList.length>1) {
+      photoTimer=window.setInterval(function() { photoAdvance(1); },photoInterval);
+    }
+  }
+  function photoShowCurrent() {
+    var count=photoList.length, img=el('photo-image'),placeholder=el('photo-placeholder');
+    el('photo-speed').innerHTML=(photoInterval/1000)+' s / photo';
+    el('photo-play').innerHTML=photoPlaying?'Pause':'Lecture';
+    if(!count) {
+      img.style.display='none'; img.removeAttribute('src');
+      placeholder.style.display='block';
+      placeholder.innerHTML='Aucune photo privée sur cet iPad. Utilise le bouton « Ajouter des photos » ci-dessus.';
+      el('photo-caption').innerHTML='0 photo';
+      return;
+    }
+    if(photoIndex>=count || photoIndex<0) photoIndex=0;
+    var item=photoList[photoIndex];
+    el('photo-caption').innerHTML=escapeHtml(item.name)+' · '+(photoIndex+1)+' / '+count;
+    placeholder.innerHTML='Chargement de la photo…';
+    placeholder.style.display='block'; img.style.display='none';
+    /* Version basée sur la date de modification : pas de cache périmé. */
+    img.src=(item.url.indexOf('data:')===0)?item.url:(item.url+'?m='+encodeURIComponent(String(item.modified)));
+  }
+  window.photoLoadedOk=function() {
+    if(!photoList.length) return;
+    el('photo-placeholder').style.display='none';
+    el('photo-image').style.display='block';
+  };
+  window.photoLoadError=function() {
+    el('photo-image').style.display='none';
+    el('photo-placeholder').style.display='block';
+    el('photo-placeholder').innerHTML='Cette photo ne peut pas être affichée. Essaie « Suivante » ou une image JPG plus petite.';
+  };
+  function photoAdvance(delta) {
+    if(!photoList.length) return;
+    photoIndex=(photoIndex+delta+photoList.length)%photoList.length;
+    photoShowCurrent();
+  }
+  window.photoNext=function() { photoAdvance(1); photoSchedule(); };
+  window.photoPrevious=function() { photoAdvance(-1); photoSchedule(); };
+  window.togglePhotoPlay=function() { photoPlaying=!photoPlaying; el('photo-play').innerHTML=photoPlaying?'Pause':'Lecture'; photoSchedule(); };
+  window.cyclePhotoSpeed=function() {
+    photoInterval=(photoInterval===5000)?10000:((photoInterval===10000)?20000:5000);
+    store('ipad_mural_photo_delay_v28',String(photoInterval));
+    el('photo-speed').innerHTML=(photoInterval/1000)+' s / photo';
+    photoSchedule();
+  };
+  window.togglePhotoFrame=function() {
+    photoFrameActive=!photoFrameActive;
+    updateDisplayMode();
+    if(photoFrameActive && !photosVisible()) showPage('photos');
+  };
+  /* V3.1.1 : photos de démonstration publiques OU photos locales privées.
+     Les données personnelles ne sont jamais téléversées sur le dépôt. */
+  var PHOTO_STORE='ipad_mural_private_photos_v31', PHOTO_MAX=8;
+  var demoPhotos=[
+    {name:'Démonstration — paysage 1',url:'demo-paysage-1.jpg',modified:0},
+    {name:'Démonstration — paysage 2',url:'demo-paysage-2.jpg',modified:0}
+  ];
+  function getSavedPrivatePhotos() {
+    var raw=load(PHOTO_STORE),p=[];
+    try {if(raw) p=JSON.parse(raw);} catch(e) {p=[];}
+    if(Object.prototype.toString.call(p)!=='[object Array]') p=[];
+    var list=[],i,item;
+    for(i=0;i<p.length && i<PHOTO_MAX;i++) {
+      item=p[i];
+      if(item && typeof item.url==='string' && item.url.indexOf('data:image/jpeg;base64,')===0 &&
+         typeof item.name==='string' && item.url.length<700000) list.push(item);
+    }
+    return list;
+  }
+  window.loadPhotos=function() {
+    var privateList=getSavedPrivatePhotos();
+    photoList=privateList.length?privateList:demoPhotos.slice();
+    photoListReady=true;
+    if(photoIndex>=photoList.length) photoIndex=0;
+    var message=privateList.length?
+      (privateList.length+' photo(s) privées sur cet iPad (sans publication).'):
+      ('2 paysages de démonstration. Aucune photo familiale publiée.');
+    el('photo-status').innerHTML=message;
+    el('photo-count-home').innerHTML=privateList.length?
+      (privateList.length+' photo(s) privées · Toucher pour ouvrir'):
+      'Diaporama de démonstration · Toucher pour ouvrir';
+    if(photosVisible() && !idleActive) photoShowCurrent();
+    if(idleActive && idleMode==='photos') idleSelectVisual();
+    photoSchedule();
+  };
+  window.addPrivatePhotos=function(input) {
+    if(!input || !input.files || !input.files.length) {
+      el('photo-status').innerHTML='Aucune photo sélectionnée.';return;
+    }
+    var existing=getSavedPrivatePhotos();
+    if(existing.length>=PHOTO_MAX) {
+      el('photo-status').innerHTML='Limite de 8 photos atteinte. Efface-les pour en importer d’autres.';
+      return;
+    }
+    var file=input.files[0],src='',usedBlob=false;
+    if(file.type && file.type.indexOf('image/')!==0) {
+      el('photo-status').innerHTML='Sélectionne une image JPG ou PNG.';return;
+    }
+    el('photo-status').innerHTML='Préparation de cette photo sur l’iPad…';
+    var im=new Image(),done=false;
+    var u=window.URL || window.webkitURL;
+    function clean() {if(usedBlob && u && u.revokeObjectURL) {try{u.revokeObjectURL(src);}catch(e){}}}
+    function fail(reason) {
+      if(done) return;done=true;clean();
+      el('photo-status').innerHTML='Import impossible sur ce Safari : '+escapeHtml(reason)+
+        '. Le diaporama de démonstration reste disponible.';
+    }
+    im.onerror=function(){fail('image non décodable');};
+    im.onload=function() {
+      if(done) return;
+      try {
+        var w=im.width,h=im.height,max=600;
+        if(!w || !h) {fail('dimensions invalides');return;}
+        var ratio=Math.min(1,max/Math.max(w,h)), cn=document.createElement('canvas');
+        cn.width=Math.max(1,Math.round(w*ratio)); cn.height=Math.max(1,Math.round(h*ratio));
+        cn.getContext('2d').drawImage(im,0,0,cn.width,cn.height);
+        var jpg=cn.toDataURL('image/jpeg',0.55);
+        if(jpg.indexOf('data:image/jpeg;base64,')!==0 || jpg.length>=700000) {
+          fail('photo trop volumineuse pour le stockage');return;
+        }
+        var name=file.name||'Photo privée',item={name:name,url:jpg,modified:0};
+        existing.push(item);
+        if(!store(PHOTO_STORE,JSON.stringify(existing))) {
+          fail('stockage Safari insuffisant');return;
+        }
+        done=true;clean();photoIndex=0;loadPhotos();
+        el('photo-status').innerHTML=existing.length+' photo(s) privée(s) enregistrée(s) localement sur l’iPad.';
+      } catch(err) {fail('fonction de traitement d’image non disponible');}
+    };
+    try {
+      if(u && u.createObjectURL) {
+        src=u.createObjectURL(file);usedBlob=true;im.src=src;
+      } else if(typeof FileReader!=='undefined') {
+        var fr=new FileReader();
+        fr.onerror=function(){fail('lecture du fichier impossible');};
+        fr.onload=function(){im.src=fr.result;};
+        fr.readAsDataURL(file);
+      } else {fail('lecture locale non prise en charge par iOS 9');}
+    } catch(e) {fail('accès à la photothèque impossible');}
+  };
+  window.removePrivatePhotos=function() {
+    if(!window.confirm('Effacer uniquement les photos enregistrées dans Safari ? Les images de démonstration resteront disponibles.')) return;
+    try {window.localStorage.removeItem(PHOTO_STORE);} catch(e) {}
+    photoIndex=0;loadPhotos();
+  };
+
+  /* V2.9 — Veille visuelle : aucune API moderne, compatible JavaScript ES5. */
+  function idleCurrentTime() {
+    var d=new Date();
+    var hh=pad(d.getHours())+':'+pad(d.getMinutes());
+    el('idle-clock-time').innerHTML=hh;
+    el('idle-photo-time').innerHTML=hh;
+    el('idle-clock-date').innerHTML=days[d.getDay()]+' '+d.getDate()+' '+months[d.getMonth()]+' '+d.getFullYear();
+  }
+  function idleStopPhotoTimer() {
+    if(idlePhotoTimer) { window.clearInterval(idlePhotoTimer); idlePhotoTimer=null; }
+  }
+  function idlePhotoShow() {
+    var img=el('idle-photo-image');
+    if(!photoList.length) { idleClockFallback(); return; }
+    if(idlePhotoIndex>=photoList.length || idlePhotoIndex<0) idlePhotoIndex=0;
+    var photo=photoList[idlePhotoIndex];
+    img.style.display='none';
+    img.src=(photo.url.indexOf('data:')===0)?photo.url:(photo.url+'?m='+encodeURIComponent(String(photo.modified)));
+  }
+  window.idlePhotoLoaded=function() {
+    if(idleActive && el('idle-photo-layer').style.display!=='none') {
+      el('idle-photo-image').style.display='block';
+    }
+  };
+  window.idlePhotoError=function() {
+    if(!idleActive) return;
+    /* Ne pas bloquer la veille sur une image illisible. */
+    idleClockFallback('Photo indisponible · horloge de secours');
+  };
+  function idleClockFallback(detail) {
+    idleStopPhotoTimer();
+    el('idle-clock-layer').style.display='block';
+    el('idle-photo-layer').style.display='none';
+    el('idle-clock-detail').innerHTML=escapeHtml(detail || (idleMode==='photos'?'Aucune photo disponible · horloge de secours':'Heure locale'));
+  }
+  function idleSelectVisual() {
+    idleStopPhotoTimer();
+    if(idleMode==='photos' && photoList.length) {
+      el('idle-clock-layer').style.display='none';
+      el('idle-photo-layer').style.display='block';
+      idlePhotoIndex=photoIndex<photoList.length?photoIndex:0;
+      idlePhotoShow();
+      if(photoList.length>1) idlePhotoTimer=window.setInterval(function() {
+        idlePhotoIndex=(idlePhotoIndex+1)%photoList.length;
+        idlePhotoShow();
+      },photoInterval);
+    } else idleClockFallback();
+  }
+  function enterIdle(force) {
+    if(idleActive || (!force && idleMode==='off')) return;
+    idleActive=true;
+    if(photoTimer) { window.clearInterval(photoTimer); photoTimer=null; }
+    idleCurrentTime();
+    el('idle-overlay').style.display='block';
+    idleSelectVisual();
+  }
+  function exitIdle() {
+    if(!idleActive) return;
+    idleActive=false;
+    idleStopPhotoTimer();
+    el('idle-overlay').style.display='none';
+    el('idle-photo-image').style.display='none';
+    el('idle-photo-image').removeAttribute('src');
+    idleLastActivity=(new Date()).getTime();
+    photoSchedule(); // reprend éventuellement le diaporama manuel précédent
+  }
+  window.wakeIdle=function(ev) {
+    if(ev) {
+      if(ev.preventDefault) ev.preventDefault();
+      if(ev.stopPropagation) ev.stopPropagation();
+    }
+    exitIdle();
+    return false;
+  };
+  window.previewIdle=function() { idleLastActivity=(new Date()).getTime(); enterIdle(true); };
+  function idleRememberActivity() {
+    if(!idleActive) idleLastActivity=(new Date()).getTime();
+  }
+  function idleCheck() {
+    if(idleActive) { idleCurrentTime(); return; }
+    if(idleMode==='off') return;
+    if(document.hidden === true) { idleRememberActivity(); return; }
+    var active=document.activeElement;
+    if(active && /^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName)) {
+      idleRememberActivity(); return; // ne masque pas un formulaire en cours d'édition
+    }
+    if((new Date()).getTime()-idleLastActivity>=idleDelay) enterIdle(false);
+  }
+  function idleSettingsLabel() {
+    var name=idleMode==='photos'?'Diaporama':(idleMode==='clock'?'Horloge':'Désactivée');
+    el('idle-settings-status').innerHTML='Mode : '+name+'. Délai : '+(idleDelay/60000)+' min.'+
+     (idleMode==='photos'?' Sans photo, l’horloge s’affiche automatiquement.':'');
+  }
+  window.changeIdlePreferences=function() {
+    var m=el('idle-mode-choice').value;
+    var d=Number(el('idle-delay-choice').value);
+    if(m!=='photos' && m!=='clock' && m!=='off') m='photos';
+    if(d!==120000 && d!==300000 && d!==600000 && d!==900000 && d!==1800000) d=300000;
+    idleMode=m; idleDelay=d;
+    store('ipad_mural_idle_mode_v29',idleMode);
+    store('ipad_mural_idle_delay_v29',String(idleDelay));
+    idleLastActivity=(new Date()).getTime();
+    idleSettingsLabel();
+    if(idleMode==='off') exitIdle();
+  };
+  var savedIdleMode=load('ipad_mural_idle_mode_v29');
+  var savedIdleDelay=Number(load('ipad_mural_idle_delay_v29'));
+  if(savedIdleMode==='photos' || savedIdleMode==='clock' || savedIdleMode==='off') idleMode=savedIdleMode;
+  if(savedIdleDelay===120000 || savedIdleDelay===300000 || savedIdleDelay===600000 || savedIdleDelay===900000 || savedIdleDelay===1800000) idleDelay=savedIdleDelay;
+  el('idle-mode-choice').value=idleMode;
+  el('idle-delay-choice').value=String(idleDelay);
+  idleSettingsLabel();
+  // Le toucher du réveil est intercepté sur la couche elle-même et n'active aucun bouton dessous.
+  if(document.addEventListener) {
+    document.addEventListener('touchstart',idleRememberActivity,false);
+    document.addEventListener('mousedown',idleRememberActivity,false);
+    document.addEventListener('keydown',function(e) {
+      if(idleActive) { window.wakeIdle(e); return; }
+      idleRememberActivity();
+    },false);
+    document.addEventListener('scroll',idleRememberActivity,false);
+    document.addEventListener('visibilitychange',idleRememberActivity,false);
+  }
+  window.setInterval(idleCheck,5000);
+
+  /* Préférence conservée dans Safari. Trois modes : auto / jour / nuit. */
+  var displayMode='auto';
+  function updateDisplayMode() {
+    var hour=(new Date()).getHours();
+    var dark=(displayMode==='night' || (displayMode==='auto' && (hour>=21 || hour<7)));
+    document.body.className=(dark?'night':'')+(photoFrameActive?' frame-mode':'');
+    el('display-mode').innerHTML=(displayMode==='auto'?'Affichage : Auto (21h–7h)':(displayMode==='day'?'Affichage : Jour':'Affichage : Nuit'));
+    el('display-mode').setAttribute('aria-pressed',dark?'true':'false');
+  }
+  window.cycleDisplayMode=function() {
+    displayMode=(displayMode==='auto')?'day':((displayMode==='day')?'night':'auto');
+    store('ipad_mural_display_mode_v24',displayMode);
+    updateDisplayMode();
+  };
+  var savedDisplayMode=load('ipad_mural_display_mode_v24');
+  if(savedDisplayMode==='auto' || savedDisplayMode==='day' || savedDisplayMode==='night') displayMode=savedDisplayMode;
+  updateDisplayMode();
+  window.setInterval(updateDisplayMode,60000);
+  window.saveNotes=function() {
+    if(store('ipad_mural_notes_v2',el('notes-input').value)) el('notes-message').innerHTML='Note enregistrée sur cet appareil.';
+    else el('notes-message').innerHTML='Impossible de sauvegarder : stockage local indisponible.';
+    refreshNotePreview();
+  };
+  try { var saved=load('ipad_mural_events_v2'); if(saved) { var temp=JSON.parse(saved); if(Object.prototype.toString.call(temp)==='[object Array]') events=temp; } } catch(e) { events=[]; }
+  el('notes-input').value=load('ipad_mural_notes_v2')||'';
+  refreshNotePreview(); refreshEvents(); updateClock(); window.setEventDate('today');
+  window.setInterval(updateClock,10000);
+  window.setInterval(refreshEvents,60000);
+  drawCityCards(); updateMainWeatherTile(); showSelectedWeather();
+  loadWeather();
+  loadPhotos();
+  window.setInterval(loadWeather,900000); /* 15 minutes */
+}());
+</script>
+</body>
+</html>
