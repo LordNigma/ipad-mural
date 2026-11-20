@@ -20,10 +20,13 @@ async def collect():
     async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=35)) as session:
         bring=Bring(session,email,password)
         await bring.login()
+        print("Bring : connexion authentifiee.", flush=True)
         candidates=(await bring.load_lists())["lists"]
+        print("Bring : acces aux listes confirme (noms masques).", flush=True)
         matches=[one for one in candidates if str(one.get("name","")).strip().casefold()==target.strip().casefold()]
         if len(matches)!=1:
             raise RuntimeError("Nom de liste non trouvé ou ambigu : contrôler BRING_LIST_NAME (valeur exacte).")
+        print("Bring : liste selectionnee avec succes.", flush=True)
         response=await bring.get_list(matches[0]["listUuid"])
         purchase=response.items.purchase
         result=[]
@@ -38,7 +41,14 @@ if __name__=="__main__":
         data=asyncio.run(collect())
         dest.write_text(json.dumps(data,ensure_ascii=False,separators=(",",":")),encoding="utf-8")
         print("Bring! : liste obtenue en lecture seule (détails masqués).")
-    except Exception:
-        # Pas de trace brute : les exceptions réseau/librairie peuvent inclure des éléments sensibles.
-        print("ERREUR : synchronisation Bring! impossible (identifiants, nom de liste ou API non officielle).",file=sys.stderr)
+    except RuntimeError as exc:
+        # Messages contrôlés par notre script, ne contiennent aucun secret ni nom de liste.
+        if "Nom de liste" in str(exc):
+            print("ERREUR Bring : BRING_LIST_NAME ne correspond a aucune liste accessible (ou correspond a plusieurs).",file=sys.stderr)
+        else:
+            print("ERREUR Bring : au moins un parametre de connexion manque.",file=sys.stderr)
+        sys.exit(1)
+    except Exception as exc:
+        # Ne jamais afficher str(exc) ni de traceback: l'API peut inclure des secrets.
+        print("ERREUR Bring : echec lors de l'appel a l'API. Type: " + type(exc).__name__,file=sys.stderr)
         sys.exit(1)
