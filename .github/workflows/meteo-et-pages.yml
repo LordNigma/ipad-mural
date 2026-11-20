@@ -1,0 +1,43 @@
+name: Publier iPad Mural et meteo
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages-ipad-mural
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Recuperer les fichiers publics
+        uses: actions/checkout@v4
+      - name: Preparer le site
+        run: |
+          mkdir -p _site
+          cp index.html demo-paysage-1.jpg demo-paysage-2.jpg _site/
+          touch _site/.nojekyll
+      - name: Recuperer la meteo Open-Meteo
+        run: python3 actualiser_meteo.py _site/weather.json
+      - name: Configurer GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: Publier les fichiers
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - name: Deployer sur GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
