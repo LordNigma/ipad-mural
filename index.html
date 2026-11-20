@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
-<title>Maison - Tableau de bord iPad 2 V3.2.2</title>
+<title>Maison - Tableau de bord iPad 2 V3.3</title>
 <style>
 /* CSS volontairement simple : Safari iOS 9, sans frameworks ni polices externes. */
 * { -webkit-box-sizing:border-box; box-sizing:border-box; }
@@ -244,6 +244,33 @@ body.night .bring-row { background:#102630; border-color:#2a4856; }
 .fresh-bad .fresh-dot { background:#e59797; }
 .fresh-detail { margin-top:12px; font-size:14px; line-height:1.45; }
 body.night .fresh-line { color:#aebec8; }
+/* V3.3 : rubriques d'actualités en texte seul, sans bibliothèque externe.
+   Navigateur iPad 2 Safari iOS 9 : CSS 2/3 classique, pas de Grid ni de Flex. */
+.nav button { min-width:0; width:13.2%; margin:0 .5% 7px; padding:10px 5px; }
+.news-tabs { overflow:hidden; margin:12px -4px 15px; }
+.news-tabs button { float:left; width:24%; margin:0 .5% 7px; min-height:45px;
+  background:#203745; border:1px solid #415c6d; border-radius:9px;
+  color:#dcebf4; padding:9px 3px; font-size:16px; }
+.news-tabs button.selected { background:#2b5264; border-color:#96d3e5; color:white; font-weight:bold; }
+.news-item { padding:15px 2px; border-bottom:1px solid #344b5b; }
+.news-item:last-child { border-bottom:none; }
+.news-headline { color:#e7f5ff; font-weight:bold; font-size:18px; line-height:1.4; display:block;
+  text-decoration:underline; text-decoration-color:#6b8ca0; padding:2px 0 7px; }
+.news-meta { font-size:13px; color:#adc4d2; line-height:1.4; }
+.news-meta strong { font-weight:normal; color:#d3e2e9; }
+.news-status { margin:0 0 10px; color:#a9c6d6; font-size:14px; line-height:1.5; }
+body.night .news-tabs button { background:#112631; border-color:#294554; }
+body.night .news-tabs button.selected { background:#183543; border-color:#6daec5; }
+body.night .news-item { border-color:#223845; }
+body.night .news-headline { color:#cadce6; }
+@media (max-width:700px) {
+  .nav button { width:12.28%; padding:10px 1px; font-size:12px; }
+  .news-tabs button { font-size:14px; }
+}
+@media (max-width:420px) {
+  .nav button { width:23%; margin:0 1% 7px; font-size:12px; }
+  .news-tabs button { width:49%; }
+}
 </style>
 </head>
 <body>
@@ -258,6 +285,7 @@ body.night .fresh-line { color:#aebec8; }
   <button id="nav-cameras" type="button" onclick="showPage('cameras')">Caméras</button>
   <button id="nav-photos" type="button" onclick="showPage('photos')">Photos</button>
   <button id="nav-courses" type="button" onclick="showPage('courses')">Courses</button>
+  <button id="nav-actualites" type="button" onclick="showPage('actualites')">Actus</button>
 </div>
 <div class="display-tools">
   <span class="hint">Affichage mural : la luminosité reste réglable dans iOS.</span>
@@ -314,6 +342,7 @@ body.night .fresh-line { color:#aebec8; }
     <div class="fresh-title">Dernières synchronisations</div>
     <div class="fresh-line" id="fresh-weather" aria-live="off"><span class="fresh-dot"></span>Météo : vérification en cours…</div>
     <div class="fresh-line" id="fresh-bring" aria-live="off"><span class="fresh-dot"></span>Bring! : vérification en cours…</div>
+    <div class="fresh-line" id="fresh-news" aria-live="off"><span class="fresh-dot"></span>Actualités : vérification en cours…</div>
     <p class="muted small" style="margin:5px 0 0">Horaires affichés selon l'heure de cet iPad. Les actualisations GitHub ne sont pas instantanées.</p>
   </div>
   <button class="photo-entry" type="button" onclick="showPage('photos')" aria-label="Ouvrir le diaporama photos">
@@ -324,6 +353,11 @@ body.night .fresh-line { color:#aebec8; }
   <button class="photo-entry" type="button" onclick="showPage('courses')" aria-label="Afficher la liste Bring!">
     <span class="photo-entry-title">▤ &nbsp;Liste de courses Bring!</span>
     <span class="photo-entry-sub">Lecture seule · liste protégée par une clé · sans compte Bring! sur l'iPad</span>
+  </button>
+
+  <button class="photo-entry" type="button" onclick="showPage('actualites')" aria-label="Lire les actualités">
+    <span class="photo-entry-title">▤ &nbsp;Actualités</span>
+    <span class="photo-entry-sub" id="news-home-sub">Belgique · Maurice · Monde · Tech</span>
   </button>
 
   <div class="panel idle-settings">
@@ -476,6 +510,26 @@ body.night .fresh-line { color:#aebec8; }
   </div>
 </div>
 
+<div class="page" id="page-actualites">
+  <div class="panel">
+    <h1>Actualités</h1>
+    <p>Les derniers titres, récupérés par GitHub Actions. Touchez un titre pour lire l'article sur le site du média. Aucune connexion directe aux flux RSS depuis cet iPad.</p>
+    <div class="news-tabs" aria-label="Choisir une rubrique">
+      <button id="news-tab-belgique" type="button" class="selected" onclick="chooseNews('belgique')">Belgique</button>
+      <button id="news-tab-maurice" type="button" onclick="chooseNews('maurice')">Maurice</button>
+      <button id="news-tab-monde" type="button" onclick="chooseNews('monde')">Monde</button>
+      <button id="news-tab-tech" type="button" onclick="chooseNews('tech')">Tech</button>
+    </div>
+    <div class="news-status" id="news-status">Chargement des titres…</div>
+    <div id="news-items" aria-live="off"><p>Chargement en cours…</p></div>
+    <div style="margin-top:17px">
+      <button class="secondary" type="button" onclick="loadNews()">Recharger les titres</button>
+      <button class="secondary" type="button" onclick="showPage('home')">Retour à l'accueil</button>
+    </div>
+    <p class="muted small" style="margin-top:15px">Titres et liens provenant des flux RSS des médias cités. Publication à intervalles planifiés par GitHub Actions ; un titre affiché peut ne plus être récent. Certains sites d'articles nécessitent un navigateur plus moderne que Safari 9.</p>
+  </div>
+</div>
+
 <!-- Couche de veille autonome : ne remplace ni la page ni son contenu. -->
 <div id="idle-overlay" class="idle-overlay" role="button" tabindex="0"
      aria-label="Toucher pour quitter la veille" onclick="wakeIdle(event)" ontouchstart="wakeIdle(event)">
@@ -492,7 +546,7 @@ body.night .fresh-line { color:#aebec8; }
     <div class="idle-wake">Toucher pour revenir</div>
   </div>
 </div>
-<div class="footer">Tableau de bord V3.2 · Safari iOS 9 · météo et Bring! en lecture seule via GitHub</div>
+<div class="footer">Tableau de bord V3.3 · Safari iOS 9 · météo, Bring! et actualités via GitHub</div>
 <script src="sjcl.js"></script>
 <script>
 /* JavaScript ES5 : compatible avec Safari 9. */
@@ -516,6 +570,7 @@ body.night .fresh-line { color:#aebec8; }
   var weatherLocalCache=false;
   var bringPublishedAt='';
   var bringStatusFound=false;
+  var newsPublishedAt='';
   function parseSyncUtc(text) {
     var m,ms,d;
     if(typeof text!=='string')return null;
@@ -560,6 +615,7 @@ body.night .fresh-line { color:#aebec8; }
     renderFreshLine('fresh-weather','Météo',weatherPublishedAt,180,'aucune date valide',weatherLocalCache);
     renderFreshLine('fresh-bring','Bring!',bringPublishedAt,120,
       bringStatusFound?'date absente ou invalide':'date non publiée (bring-status.json absent)',false);
+    renderFreshLine('fresh-news','Actualités',newsPublishedAt,240,'non chargées ou date absente',false);
     if(el('weather-freshness-detail')) {
       el('weather-freshness-detail').innerHTML=w===null?'Dernière synchronisation météo : inconnue.':
         'Dernière synchronisation météo : '+escapeHtml(localSyncTime(w))+' (heure de l’iPad).'+
@@ -691,7 +747,7 @@ body.night .fresh-line { color:#aebec8; }
     el('notes-preview').innerHTML=t ? escapeHtml(t.substring(0,95)) : 'Touchez « Notes » pour écrire un mémo.';
   }
   window.showPage=function(name) {
-    var ids=['home','agenda','notes','cameras','weather','photos','courses'],i,active;
+    var ids=['home','agenda','notes','cameras','weather','photos','courses','actualites'],i,active;
     if(name!=='photos') {
       photoFrameActive=false;
       if(photoTimer) { window.clearInterval(photoTimer); photoTimer=null; }
@@ -709,6 +765,7 @@ body.night .fresh-line { color:#aebec8; }
       if(!photoListReady) loadPhotos();
       else { photoShowCurrent(); photoSchedule(); }
     }
+    if(name==='actualites') renderNews();
   };
   window.addEvent=function() {
     var title=el('event-title').value.replace(/^\s+|\s+$/g,'');
@@ -1411,12 +1468,98 @@ body.night .fresh-line { color:#aebec8; }
     if(bringSessionKey && el('page-courses').className.indexOf('active')!==-1) fetchBringEncrypted();
   },900000);
 
+  /* V3.3 : actualités statiques, uniquement des titres et des liens d'origine.
+     Les requêtes XHR chargent actualites.json créé par GitHub Actions.
+     Aucune fonction JavaScript moderne (fetch, Promise, let, const). */
+  var newsCategories=['belgique','maurice','monde','tech'];
+  var newsNames={belgique:'Belgique',maurice:'Île Maurice',monde:'International',tech:'Technologie'};
+  var selectedNewsCategory='belgique';
+  var newsData=null, newsBusy=false;
+  function isSafeNewsUrl(value) {
+    return typeof value==='string' && /^https:\/\/[a-z0-9][^\s<>"']+$/i.test(value) && value.length<=1000;
+  }
+  function newsDateLabel(utcText) {
+    var t=parseSyncUtc(utcText),d;
+    if(t===null)return 'Date non précisée';
+    d=new Date(t);
+    return freshPad(d.getDate())+'/'+freshPad(d.getMonth()+1)+'/'+d.getFullYear()+' à '+freshPad(d.getHours())+':'+freshPad(d.getMinutes());
+  }
+  window.chooseNews=function(category) {
+    var i;
+    if(!newsNames[category])return;
+    selectedNewsCategory=category;
+    for(i=0;i<newsCategories.length;i++){
+      el('news-tab-'+newsCategories[i]).className=(newsCategories[i]===category?'selected':'');
+    }
+    renderNews();
+  };
+  function renderNews() {
+    var group,items=[],i,item,output='',total=0,stamp;
+    if(!el('news-items'))return;
+    if(!newsData || !newsData.categories) {
+      el('news-status').innerHTML='Titres indisponibles. Vérifie le fichier actualites.json et GitHub Actions.';
+      el('news-items').innerHTML='<p class="empty">Aucun titre chargé pour le moment.</p>';
+      return;
+    }
+    group=newsData.categories[selectedNewsCategory];
+    if(group && group.items && Object.prototype.toString.call(group.items)==='[object Array]') items=group.items;
+    total=items.length;
+    stamp=group && group.fetched_at_utc ? group.fetched_at_utc : newsData.updated_at_utc;
+    el('news-status').innerHTML=escapeHtml(newsNames[selectedNewsCategory])+' · '+total+' titre'+(total>1?'s':'')+
+      ' · récupération : '+(parseSyncUtc(stamp)!==null?escapeHtml(newsDateLabel(stamp)):'non disponible')+
+      (group && group.stale?' · Flux indisponible : dernière copie conservée':'');
+    for(i=0;i<items.length && i<8;i++){
+      item=items[i];
+      if(!item || !isSafeNewsUrl(item.url) || typeof item.title!=='string')continue;
+      output+='<div class="news-item"><a class="news-headline" href="'+escapeHtml(item.url)+
+        '" target="_blank" rel="noopener noreferrer">'+escapeHtml(item.title.substring(0,220))+'</a>'+
+        '<div class="news-meta"><strong>'+escapeHtml(String(item.source||'Source inconnue').substring(0,60))+'</strong> · '+
+        escapeHtml(newsDateLabel(item.published_at_utc))+'</div></div>';
+    }
+    el('news-items').innerHTML=output || '<p class="empty">Aucun article disponible actuellement dans cette rubrique. La source RSS peut être momentanément indisponible.</p>';
+  }
+  window.loadNews=function() {
+    if(newsBusy)return;
+    newsBusy=true;
+    var xhr=new XMLHttpRequest(),done=false;
+    var timer=window.setTimeout(function(){ try{xhr.abort();}catch(e){} complete(null); },15000);
+    function complete(obj){
+      if(done)return;
+      done=true;newsBusy=false;window.clearTimeout(timer);
+      if(obj && obj.categories && obj.version===1){
+        newsData=obj;
+        newsPublishedAt=typeof obj.updated_at_utc==='string'?obj.updated_at_utc:'';
+        try{ window.localStorage.setItem('ipad_mural_news_v33',JSON.stringify(obj)); }catch(e){}
+      } else if(!newsData) {
+        try {
+          var old=JSON.parse(window.localStorage.getItem('ipad_mural_news_v33')||'null');
+          if(old && old.categories){newsData=old;newsPublishedAt=old.updated_at_utc||'';}
+        }catch(e){}
+      }
+      renderNews();updateFreshIndicators();
+      if(el('news-home-sub'))el('news-home-sub').innerHTML=newsData ?
+        'Belgique · Maurice · Monde · Tech · Titres disponibles' : 'Belgique · Maurice · Monde · Actualités indisponibles';
+    }
+    try{
+      xhr.open('GET','actualites.json?t='+((new Date()).getTime()),true);
+      xhr.onreadystatechange=function(){
+        if(xhr.readyState!==4 || done)return;
+        var obj=null;
+        if(xhr.status===200){ try{obj=JSON.parse(xhr.responseText);}catch(e){} }
+        complete(obj);
+      };
+      xhr.onerror=function(){complete(null);};
+      xhr.send(null);
+    }catch(e){complete(null);}
+  };
   updateFreshIndicators();
   loadBringStatus();
   loadWeather();
   loadPhotos();
+  loadNews();
   window.setInterval(loadWeather,900000); /* 15 minutes */
   window.setInterval(loadBringStatus,900000); /* 15 minutes */
+  window.setInterval(loadNews,900000); /* 15 minutes */
 }());
 </script>
 </body>
