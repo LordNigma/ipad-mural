@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
-<title>Maison - Tableau de bord iPad 2 V3.2</title>
+<title>Maison - Tableau de bord iPad 2 V3.2.2</title>
 <style>
 /* CSS volontairement simple : Safari iOS 9, sans frameworks ni polices externes. */
 * { -webkit-box-sizing:border-box; box-sizing:border-box; }
@@ -234,6 +234,16 @@ body.night .idle-field select { background:#142c38; border-color:#355568; }
 body.night .bring-row { background:#102630; border-color:#2a4856; }
 @media (max-width:700px) { .nav button { width:14.66%; min-width:0; margin:0 1% 7px; padding:10px 1px; font-size:12px; } }
 @media (max-width:420px) { .nav button { font-size:11px; } }
+/* V3.2.2 : indicateurs d'actualisation. CSS classique pour Safari 9. */
+.fresh-panel { padding:13px 16px; margin:9px 0 12px; }
+.fresh-title { font-size:16px; margin-bottom:9px; font-weight:bold; }
+.fresh-line { display:block; padding:6px 0; color:#cbd9e1; font-size:14px; line-height:1.45; }
+.fresh-dot { display:inline-block; width:9px; height:9px; border-radius:9px; margin-right:9px; background:#8b9ca7; }
+.fresh-good .fresh-dot { background:#8acfb1; }
+.fresh-warn .fresh-dot { background:#efd08b; }
+.fresh-bad .fresh-dot { background:#e59797; }
+.fresh-detail { margin-top:12px; font-size:14px; line-height:1.45; }
+body.night .fresh-line { color:#aebec8; }
 </style>
 </head>
 <body>
@@ -299,6 +309,12 @@ body.night .bring-row { background:#102630; border-color:#2a4856; }
         </button>
       </div>
     </div>
+  </div>
+  <div class="panel fresh-panel" aria-label="Fraîcheur des données">
+    <div class="fresh-title">Dernières synchronisations</div>
+    <div class="fresh-line" id="fresh-weather" aria-live="off"><span class="fresh-dot"></span>Météo : vérification en cours…</div>
+    <div class="fresh-line" id="fresh-bring" aria-live="off"><span class="fresh-dot"></span>Bring! : vérification en cours…</div>
+    <p class="muted small" style="margin:5px 0 0">Horaires affichés selon l'heure de cet iPad. Les actualisations GitHub ne sont pas instantanées.</p>
   </div>
   <button class="photo-entry" type="button" onclick="showPage('photos')" aria-label="Ouvrir le diaporama photos">
     <span class="photo-entry-title">▧ &nbsp;Diaporama familial</span>
@@ -391,6 +407,7 @@ body.night .bring-row { background:#102630; border-color:#2a4856; }
     <div id="bring-message" class="message" aria-live="polite">Liste verrouillée. La clé n'est pas enregistrée dans Safari.</div>
     <div id="bring-list" class="bring-list" aria-live="polite"></div>
     <div id="bring-updated" class="small muted"></div>
+    <div id="bring-freshness-detail" class="fresh-detail muted">État de la synchronisation : vérification en cours…</div>
     <p class="muted small">La liste se met à jour selon l'exécution de GitHub Actions, généralement toutes les 30 minutes mais sans garantie. Le contenu chiffré est publiquement téléchargeable ; une clé longue et aléatoire est indispensable. La liste affichée reste visible tant que tu ne la verrouilles pas ou ne quittes pas la page.</p>
   </div>
 </div>
@@ -419,6 +436,7 @@ body.night .bring-row { background:#102630; border-color:#2a4856; }
       <div id="weather-forecast" class="weather-grid"></div>
       <div style="clear:both"></div>
       <p class="weather-updated" id="weather-updated"></p>
+      <div id="weather-freshness-detail" class="fresh-detail muted">État de la synchronisation : vérification en cours…</div>
     </div>
     <div class="weather-actions">
       <button class="primary" type="button" onclick="makeWeatherMain()" id="weather-set-main">Ville principale : Bruxelles</button>
@@ -491,6 +509,99 @@ body.night .bring-row { background:#102630; border-color:#2a4856; }
   try { savedPhotoDelay=window.localStorage.getItem('ipad_mural_photo_delay_v28'); } catch(e) {}
   if(savedPhotoDelay==='5000' || savedPhotoDelay==='10000' || savedPhotoDelay==='20000') photoInterval=Number(savedPhotoDelay);
   function el(id) { return document.getElementById(id); }
+  /* V3.2.2 : âge des données, calculé depuis des horodatages UTC réellement publiés.
+     Ne pas confondre "dernier affichage sur l'iPad" et "dernière synchronisation réussie".
+     Le parseur explicite fonctionne sur Safari iOS 9 (Date.parse ISO est variable). */
+  var weatherPublishedAt='';
+  var weatherLocalCache=false;
+  var bringPublishedAt='';
+  var bringStatusFound=false;
+  function parseSyncUtc(text) {
+    var m,ms,d;
+    if(typeof text!=='string')return null;
+    m=/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?(?:\.\d+)?(?:Z|\+00:00)$/.exec(text);
+    if(!m)return null;
+    ms=Date.UTC(+m[1],+m[2]-1,+m[3],+m[4],+m[5],+(m[6]||0));
+    d=new Date(ms);
+    if(d.getUTCFullYear()!==+m[1] || d.getUTCMonth()!==+m[2]-1 || d.getUTCDate()!==+m[3] ||
+       d.getUTCHours()!==+m[4] || d.getUTCMinutes()!==+m[5])return null;
+    return ms;
+  }
+  function freshPad(n) { return (n<10?'0':'')+n; }
+  function localSyncTime(ms) {
+    var d=new Date(ms);
+    return freshPad(d.getDate())+'/'+freshPad(d.getMonth()+1)+'/'+d.getFullYear()+' à '+freshPad(d.getHours())+':'+freshPad(d.getMinutes());
+  }
+  function freshAge(ms,limitMinutes) {
+    var delta=Math.floor(((new Date()).getTime()-ms)/60000),desc;
+    if(delta < -5)return {kind:'bad',label:'Horloge incohérente',desc:'date future : vérifie l’heure de l’iPad'};
+    if(delta<0)delta=0;
+    if(delta<1)desc='à l’instant';
+    else if(delta<60)desc='il y a '+delta+' min';
+    else if(delta<1440)desc='il y a '+Math.floor(delta/60)+' h'+(delta%60?' '+(delta%60)+' min':'');
+    else desc='il y a '+Math.floor(delta/1440)+' j';
+    return {kind:delta>limitMinutes?'warn':'good',label:delta>limitMinutes?'Actualisation en retard':'À jour',desc:desc};
+  }
+  function renderFreshLine(id,what,stamp,limit,notFoundLabel,cache) {
+    var elem=el(id),ms=parseSyncUtc(stamp),f,txt,kind;
+    if(!elem)return;
+    if(ms===null) {
+      kind='bad';txt=what+' : '+notFoundLabel;
+    } else {
+      f=freshAge(ms,limit);kind=f.kind;
+      txt=what+' : '+f.label+' · '+f.desc+' ('+localSyncTime(ms)+')';
+      if(cache) { kind='warn';txt+=' · cache local, non vérifié'; }
+    }
+    elem.className='fresh-line fresh-'+kind;
+    elem.innerHTML='<span class="fresh-dot"></span>'+escapeHtml(txt);
+  }
+  function updateFreshIndicators() {
+    var w=parseSyncUtc(weatherPublishedAt),b=parseSyncUtc(bringPublishedAt),f;
+    renderFreshLine('fresh-weather','Météo',weatherPublishedAt,180,'aucune date valide',weatherLocalCache);
+    renderFreshLine('fresh-bring','Bring!',bringPublishedAt,120,
+      bringStatusFound?'date absente ou invalide':'date non publiée (bring-status.json absent)',false);
+    if(el('weather-freshness-detail')) {
+      el('weather-freshness-detail').innerHTML=w===null?'Dernière synchronisation météo : inconnue.':
+        'Dernière synchronisation météo : '+escapeHtml(localSyncTime(w))+' (heure de l’iPad).'+
+        (weatherLocalCache?' Données en cache, sans confirmation récente.':'');
+    }
+    if(el('bring-freshness-detail')) {
+      el('bring-freshness-detail').innerHTML=b===null?'Dernière synchronisation Bring! : non vérifiée.':
+        'Dernière synchronisation Bring! : '+escapeHtml(localSyncTime(b))+' (heure de l’iPad).';
+    }
+  }
+  /* L'heure de Bring! est une métadonnée publique, sans nom de liste ni article.
+     Elle est produite seulement si le chiffrement a réellement abouti. */
+  var bringStatusBusy=false;
+  window.loadBringStatus=function() {
+    if(bringStatusBusy)return;
+    bringStatusBusy=true;
+    var xhr=new XMLHttpRequest(),done=false;
+    var timer=window.setTimeout(function(){try{xhr.abort();}catch(e){}finish(false,null);},15000);
+    function finish(ok,obj) {
+      if(done)return;
+      done=true;window.clearTimeout(timer);bringStatusBusy=false;
+      if(ok && obj && parseSyncUtc(obj.updated_at_utc)!==null) {
+        bringPublishedAt=obj.updated_at_utc;bringStatusFound=true;
+      } else if(!bringPublishedAt) {
+        bringStatusFound=false;
+      }
+      updateFreshIndicators();
+    }
+    try {
+      xhr.open('GET','bring-status.json?t='+((new Date()).getTime()),true);
+      xhr.onreadystatechange=function(){
+        if(xhr.readyState!==4 || done)return;
+        var obj=null;
+        if(xhr.status===200) {try{obj=JSON.parse(xhr.responseText);}catch(e){}}
+        finish(xhr.status===200,obj);
+      };
+      xhr.onerror=function(){finish(false,null);};
+      xhr.send(null);
+    }catch(e){finish(false,null);}
+  };
+  window.setInterval(updateFreshIndicators,60000);
+
   function pad(n) { return n<10 ? '0'+n : ''+n; }
   function escapeHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
   function todayIso() { var d=new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
@@ -765,6 +876,8 @@ body.night .bring-row { background:#102630; border-color:#2a4856; }
     try { store('ipad_mural_weather_cache_v31', JSON.stringify(cityData)); } catch(e) {}
   }
   function weatherInitCached() {
+    weatherPublishedAt=load('ipad_mural_weather_stamp_v322')||'';
+    weatherLocalCache=!!weatherPublishedAt;
     try {
       var saved=JSON.parse(load('ipad_mural_weather_cache_v31')||'{}'),i,d;
       for(i=0;i<cityInfo.length;i++) {
@@ -803,6 +916,11 @@ body.night .bring-row { background:#102630; border-color:#2a4856; }
             successes++;
           }
         }
+        if(successes && parseSyncUtc(stamp)!==null) {
+          weatherPublishedAt=stamp;
+          weatherLocalCache=false;
+          store('ipad_mural_weather_stamp_v322',stamp);
+        }
         weatherCacheSave();
       }
       if(successes) {
@@ -815,6 +933,8 @@ body.night .bring-row { background:#102630; border-color:#2a4856; }
           'Vérifie sur GitHub Actions que « Publier iPad Mural et météo » a réussi'+
           (detail?' ('+escapeHtml(detail)+')':'')+'.';
       }
+      if(!successes) weatherLocalCache=true;
+      updateFreshIndicators();
       drawCityCards();showSelectedWeather();updateMainWeatherTile();
     }
     try {
@@ -1234,7 +1354,12 @@ body.night .bring-row { background:#102630; border-color:#2a4856; }
       out+='<div class="bring-row">'+escapeHtml(it.name.substring(0,200))+detail+'</div>';
     }
     el('bring-list').innerHTML=out || '<p>Aucun article à acheter actuellement.</p>';
-    el('bring-updated').innerHTML='Dernière récupération de Bring! : '+escapeHtml(String(data.updated_at_utc||'inconnue').replace('T',' ').substring(0,19))+' UTC.';
+    el('bring-updated').innerHTML='Dernière récupération de la liste affichée : '+escapeHtml(String(data.updated_at_utc||'inconnue').replace('T',' ').substring(0,19))+' UTC.';
+    if(parseSyncUtc(data.updated_at_utc)!==null) {
+      bringPublishedAt=data.updated_at_utc;
+      bringStatusFound=true;
+      updateFreshIndicators();
+    }
     bringMsg(items.length+' article(s) · Consultation uniquement.');
   }
   function fetchBringEncrypted() {
@@ -1286,9 +1411,12 @@ body.night .bring-row { background:#102630; border-color:#2a4856; }
     if(bringSessionKey && el('page-courses').className.indexOf('active')!==-1) fetchBringEncrypted();
   },900000);
 
+  updateFreshIndicators();
+  loadBringStatus();
   loadWeather();
   loadPhotos();
   window.setInterval(loadWeather,900000); /* 15 minutes */
+  window.setInterval(loadBringStatus,900000); /* 15 minutes */
 }());
 </script>
 </body>
