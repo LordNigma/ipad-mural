@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
-<title>Maison - Tableau de bord iPad 2 V3.1</title>
+<title>Maison - Tableau de bord iPad 2 V3.2</title>
 <style>
 /* CSS volontairement simple : Safari iOS 9, sans frameworks ni polices externes. */
 * { -webkit-box-sizing:border-box; box-sizing:border-box; }
@@ -227,6 +227,13 @@ body.night .idle-field select { background:#142c38; border-color:#355568; }
 }
 .transfer-text { height:120px !important; font-size:13px; line-height:1.5; -webkit-user-select:text; user-select:text; }
 #photo-file-input { font-size:15px; min-height:44px; color:#eef6f9; }
+/* V3.2 : six rubriques, adaptees au format portrait comme au paysage. */
+.bring-list { margin:12px 0 18px; }
+.bring-row { padding:12px 14px; margin-bottom:7px; background:#203745; border:1px solid #3b5666; border-radius:8px; font-size:19px; }
+.bring-spec { display:block; font-size:14px; margin-top:4px; color:#b8cfdc; }
+body.night .bring-row { background:#102630; border-color:#2a4856; }
+@media (max-width:700px) { .nav button { width:14.66%; min-width:0; margin:0 1% 7px; padding:10px 1px; font-size:12px; } }
+@media (max-width:420px) { .nav button { font-size:11px; } }
 </style>
 </head>
 <body>
@@ -240,6 +247,7 @@ body.night .idle-field select { background:#142c38; border-color:#355568; }
   <button id="nav-notes" type="button" onclick="showPage('notes')">Notes</button>
   <button id="nav-cameras" type="button" onclick="showPage('cameras')">Caméras</button>
   <button id="nav-photos" type="button" onclick="showPage('photos')">Photos</button>
+  <button id="nav-courses" type="button" onclick="showPage('courses')">Courses</button>
 </div>
 <div class="display-tools">
   <span class="hint">Affichage mural : la luminosité reste réglable dans iOS.</span>
@@ -295,6 +303,11 @@ body.night .idle-field select { background:#142c38; border-color:#355568; }
   <button class="photo-entry" type="button" onclick="showPage('photos')" aria-label="Ouvrir le diaporama photos">
     <span class="photo-entry-title">▧ &nbsp;Diaporama familial</span>
     <span class="photo-entry-sub" id="photo-count-home">Photos privées sur l’iPad · Toucher pour ouvrir</span>
+  </button>
+
+  <button class="photo-entry" type="button" onclick="showPage('courses')" aria-label="Afficher la liste Bring!">
+    <span class="photo-entry-title">▤ &nbsp;Liste de courses Bring!</span>
+    <span class="photo-entry-sub">Lecture seule · liste protégée par une clé · sans compte Bring! sur l'iPad</span>
   </button>
 
   <div class="panel idle-settings">
@@ -366,6 +379,22 @@ body.night .idle-field select { background:#142c38; border-color:#355568; }
     <p class="muted small">Aucune image de caméra n'est affichée et aucun accès à la caméra n'est effectué par cette page.</p>
   </div>
 </div>
+<div class="page" id="page-courses">
+  <div class="panel">
+    <h1>Liste de courses Bring!</h1>
+    <p>Les articles sont récupérés automatiquement depuis ta liste Bring! par GitHub Actions, puis chiffrés avant publication. Sur cet iPad, saisis ta clé privée pour les consulter. Cette rubrique ne peut ni ajouter ni cocher des articles.</p>
+    <div class="field"><label for="bring-passphrase">Clé de consultation (identique au secret BRING_VIEW_KEY)</label>
+    <input id="bring-passphrase" type="password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Ta clé secrète, jamais envoyée au serveur"></div>
+    <button class="primary" type="button" onclick="unlockBringList()">Afficher ma liste</button>
+    <button class="secondary" type="button" onclick="refreshBringList()">Actualiser</button>
+    <button class="secondary" type="button" onclick="lockBringList()">Verrouiller</button>
+    <div id="bring-message" class="message" aria-live="polite">Liste verrouillée. La clé n'est pas enregistrée dans Safari.</div>
+    <div id="bring-list" class="bring-list" aria-live="polite"></div>
+    <div id="bring-updated" class="small muted"></div>
+    <p class="muted small">La liste se met à jour selon l'exécution de GitHub Actions, généralement toutes les 30 minutes mais sans garantie. Le contenu chiffré est publiquement téléchargeable ; une clé longue et aléatoire est indispensable. La liste affichée reste visible tant que tu ne la verrouilles pas ou ne quittes pas la page.</p>
+  </div>
+</div>
+
 <div class="page" id="page-weather">
   <div class="panel">
     <h1>Météo internationale</h1>
@@ -445,7 +474,8 @@ body.night .idle-field select { background:#142c38; border-color:#355568; }
     <div class="idle-wake">Toucher pour revenir</div>
   </div>
 </div>
-<div class="footer">Tableau de bord V3.1.1 · iPad 2 / Safari iOS 9 · météo via GitHub et galerie de test</div>
+<div class="footer">Tableau de bord V3.2 · Safari iOS 9 · météo et Bring! en lecture seule via GitHub</div>
+<script src="sjcl.js"></script>
 <script>
 /* JavaScript ES5 : compatible avec Safari 9. */
 (function () {
@@ -550,7 +580,7 @@ body.night .idle-field select { background:#142c38; border-color:#355568; }
     el('notes-preview').innerHTML=t ? escapeHtml(t.substring(0,95)) : 'Touchez « Notes » pour écrire un mémo.';
   }
   window.showPage=function(name) {
-    var ids=['home','agenda','notes','cameras','weather','photos'],i,active;
+    var ids=['home','agenda','notes','cameras','weather','photos','courses'],i,active;
     if(name!=='photos') {
       photoFrameActive=false;
       if(photoTimer) { window.clearInterval(photoTimer); photoTimer=null; }
@@ -1173,6 +1203,89 @@ body.night .idle-field select { background:#142c38; border-color:#355568; }
   window.setInterval(updateClock,10000);
   window.setInterval(refreshEvents,60000);
   drawCityCards(); updateMainWeatherTile(); showSelectedWeather();
+
+  /* V3.2 : liste Bring! chiffrée côté GitHub (SJCL AES-CCM), lecture seule.
+     La clé ne va jamais dans localStorage, une URL ou les requêtes HTTP. */
+  var bringSessionKey=null;
+  var bringFetching=false;
+  function bringMsg(t) { el('bring-message').innerHTML=escapeHtml(t); }
+  function clearBringView() {
+    el('bring-list').innerHTML='';
+    el('bring-updated').innerHTML='';
+  }
+  window.lockBringList=function(){
+    bringSessionKey=null;
+    if(typeof sjcl!=='undefined' && sjcl.misc) sjcl.misc.pa={};
+    el('bring-passphrase').value='';
+    clearBringView();
+    bringMsg('Liste verrouillée. Clé effacée de cette session.');
+  };
+  function paintBring(plaintext) {
+    var data,items,out='',i,it,detail;
+    try { data=JSON.parse(plaintext); } catch(e) { bringMsg('Réponse déchiffrée incorrecte.'); return; }
+    if(!data || data.v!==1 || Object.prototype.toString.call(data.items)!=='[object Array]' || data.items.length>1000) {
+      bringMsg('Format de liste non reconnu.');return;
+    }
+    items=data.items;
+    for(i=0;i<items.length;i++) {
+      it=items[i];
+      if(!it || typeof it.name!=='string' || typeof it.detail!=='string') continue;
+      detail=it.detail ? '<span class="bring-spec">'+escapeHtml(it.detail.substring(0,250))+'</span>' : '';
+      out+='<div class="bring-row">'+escapeHtml(it.name.substring(0,200))+detail+'</div>';
+    }
+    el('bring-list').innerHTML=out || '<p>Aucun article à acheter actuellement.</p>';
+    el('bring-updated').innerHTML='Dernière récupération de Bring! : '+escapeHtml(String(data.updated_at_utc||'inconnue').replace('T',' ').substring(0,19))+' UTC.';
+    bringMsg(items.length+' article(s) · Consultation uniquement.');
+  }
+  function fetchBringEncrypted() {
+    if(bringFetching || !bringSessionKey) return;
+    if(typeof sjcl==='undefined' || !sjcl.decrypt) {
+      bringMsg('La bibliothèque de chiffrement n\'a pas été chargée. Vérifie GitHub Actions.');return;
+    }
+    bringFetching=true;
+    bringMsg('Chargement et déchiffrement… (cela peut prendre un moment sur iPad 2)');
+    var xhr=new XMLHttpRequest(),done=false,timer=window.setTimeout(function(){
+      if(done)return;
+      try{xhr.abort();}catch(ignore){}
+      finish('Délai dépassé.');
+    },20000);
+    function finish(error,payload) {
+      if(done)return;
+      done=true;bringFetching=false;window.clearTimeout(timer);
+      if(error){bringMsg(error);return;}
+      // Relâcher le navigateur avant le PBKDF2 : interface lisible durant le calcul.
+      window.setTimeout(function(){
+        try { paintBring(sjcl.decrypt(bringSessionKey,payload)); }
+        catch(e) { clearBringView();bringMsg('Clé incorrecte, données endommagées ou déchiffrement non compatible.'); }
+        finally { if(typeof sjcl!=='undefined' && sjcl.misc) sjcl.misc.pa={}; }
+      },30);
+    }
+    try {
+      xhr.open('GET','bring.enc.json?t='+((new Date()).getTime()),true);
+      xhr.onreadystatechange=function(){
+        if(xhr.readyState!==4 || done)return;
+        if(xhr.status===200) finish(null,xhr.responseText);
+        else finish('Liste chiffrée absente (HTTP '+xhr.status+'). Vérifie les secrets et le workflow GitHub.');
+      };
+      xhr.onerror=function(){ finish('Connexion impossible au fichier de liste.'); };
+      xhr.send(null);
+    } catch(e){ finish('Impossible de lancer le chargement.'); }
+  }
+  window.unlockBringList=function(){
+    var pass=el('bring-passphrase').value;
+    if(!pass || pass.length<20){bringMsg('Utilise une clé aléatoire d’au moins 20 caractères.');return;}
+    bringSessionKey=pass;
+    el('bring-passphrase').value='';
+    fetchBringEncrypted();
+  };
+  window.refreshBringList=function(){
+    if(!bringSessionKey) { bringMsg('Saisis d’abord ta clé pour déverrouiller la liste.');return; }
+    fetchBringEncrypted();
+  };
+  window.setInterval(function(){
+    if(bringSessionKey && el('page-courses').className.indexOf('active')!==-1) fetchBringEncrypted();
+  },900000);
+
   loadWeather();
   loadPhotos();
   window.setInterval(loadWeather,900000); /* 15 minutes */
