@@ -37,6 +37,8 @@ jobs:
           touch _site/.nojekyll
       - name: Recuperer la meteo Open-Meteo
         run: python3 actualiser_meteo.py _site/weather.json
+      - name: Recuperer les titres des actualites (RSS publics)
+        run: python3 actualiser_actualites.py _site/actualites.json
       - name: Verifier la configuration Bring (sans afficher les valeurs)
         env:
           BRING_EMAIL: ${{ secrets.BRING_EMAIL }}
