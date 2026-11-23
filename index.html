@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
-<title>Maison - Tableau de bord iPad 2 V3.3</title>
+<title>Maison - iPad Mural V3.4</title>
 <style>
 /* CSS volontairement simple : Safari iOS 9, sans frameworks ni polices externes. */
 * { -webkit-box-sizing:border-box; box-sizing:border-box; }
@@ -271,6 +271,43 @@ body.night .news-headline { color:#cadce6; }
   .nav button { width:23%; margin:0 1% 7px; font-size:12px; }
   .news-tabs button { width:49%; }
 }
+
+/* V3.4 : accueil façon portail ; grilles en floats ES5/Safari 9, sans CSS Grid. */
+.portal-back { min-height:47px; padding:0 0 10px; margin-top:-3px; border-bottom:1px solid #304756; }
+.portal-back button { float:left; min-width:132px; background:#264b5f; border-color:#77aec1; font-weight:bold; margin:0; }
+.portal-back span { display:block; float:left; padding:12px 0 0 20px; color:#c5d7e1; font-size:18px; font-weight:bold; }
+.portal-hero { overflow:hidden; background:#192b37; border:1px solid #344b58; border-radius:15px; padding:18px 20px; margin-bottom:18px; }
+.portal-clock-side { float:left; width:53%; padding:6px 12px 0 4px; }
+.portal-clock { font-size:78px; letter-spacing:-2px; line-height:1; }
+.portal-date { font-size:18px; color:#c0d1dd; margin-top:12px; }
+.portal-kicker { font-size:12px; color:#8db9ca; margin-top:14px; letter-spacing:.13em; }
+.portal-weather-side { display:block; float:right; width:46%; min-height:156px; border:1px solid #4b7082; background:#203d4b; color:#ecf6fa; border-radius:13px; text-align:left; padding:12px 15px; }
+.portal-weather-side:active { background:#315b6d; }
+.portal-weather-name, .portal-weather-temp, .portal-weather-condition, .portal-weather-today { display:block; }
+.portal-weather-name { color:#aad5e5; font-size:17px; font-weight:bold; }
+.portal-weather-temp { font-size:36px; margin-top:5px; }
+.portal-weather-condition { font-size:14px; color:#e0eef5; }
+.portal-weather-today { font-size:12px; color:#a9c1d0; margin-top:7px; }
+.portal-heading { font-size:20px; font-weight:bold; margin:0 0 9px; color:#dcecf4; }
+.portal-grid { margin:0 -5px; }
+.portal-row { overflow:hidden; clear:both; }
+.portal-item { float:left; width:50%; padding:5px; }
+.portal-card { width:100%; display:block; height:110px; text-align:left; padding:14px 18px; border-radius:12px; border:1px solid #385665; background:#1a2c38; color:#f0f5f8; }
+.portal-card:active,.portal-card:focus { background:#285064; border-color:#85cee4; outline:none; }
+.portal-symbol { float:right; font-size:26px; color:#96d1e2; }
+.portal-name { display:block; font-size:22px; font-weight:bold; margin-bottom:7px; }
+.portal-desc { display:block; color:#b9cbd6; font-size:14px; line-height:1.3; }
+.portal-foot { margin:11px 3px 6px; color:#a6b8c5; font-size:13px; }
+body.night .portal-hero,body.night .portal-card { background:#101a22; }
+body.night .portal-weather-side { background:#142833; }
+/* iPad 2 en paysage : quatre tuiles par rangée, toutes visibles sans long défilement. */
+@media (min-width:850px) {
+ .portal-grid { overflow:hidden; }
+ .portal-row { float:left; width:50%; clear:none; }
+ .portal-card { height:118px; }
+}
+@media(max-width:700px) { .portal-clock { font-size:64px; } .portal-clock-side { width:51%; } .portal-weather-side { width:48%; min-height:150px; } .portal-card { height:119px; padding:12px; } .portal-name { font-size:18px; } .portal-desc { font-size:13px; } .portal-weather-temp { font-size:29px; } }
+@media(max-width:420px) { .portal-hero { padding:11px; } .portal-clock { font-size:47px; } .portal-date { font-size:14px; } .portal-weather-side { min-height:138px; } .portal-card { height:113px; padding:10px; } .portal-name { font-size:16px; } .portal-desc { font-size:12px; } }
 </style>
 </head>
 <body>
@@ -278,20 +315,50 @@ body.night .news-headline { color:#cadce6; }
   <div class="logo">MAISON / TABLEAU DE BORD</div>
   <div class="connection"><strong>●</strong> GitHub Pages · données locales</div>
 </div>
-<div class="nav">
-  <button id="nav-home" type="button" class="active" onclick="showPage('home')">Accueil</button>
-  <button id="nav-agenda" type="button" onclick="showPage('agenda')">Agenda</button>
-  <button id="nav-notes" type="button" onclick="showPage('notes')">Notes</button>
-  <button id="nav-cameras" type="button" onclick="showPage('cameras')">Caméras</button>
-  <button id="nav-photos" type="button" onclick="showPage('photos')">Photos</button>
-  <button id="nav-courses" type="button" onclick="showPage('courses')">Courses</button>
-  <button id="nav-actualites" type="button" onclick="showPage('actualites')">Actus</button>
+<div class="nav portal-back" id="detail-nav" style="display:none">
+  <button id="nav-return" type="button" onclick="showPage('home')">&#8592; Accueil</button>
+  <span id="detail-page-name">Rubrique</span>
 </div>
-<div class="display-tools">
+<div class="display-tools" id="display-tools" style="display:none">
   <span class="hint">Affichage mural : la luminosité reste réglable dans iOS.</span>
   <button id="display-mode" type="button" onclick="cycleDisplayMode()">Affichage : Auto (21h–7h)</button>
 </div>
 <div class="page active" id="page-home">
+  <div class="portal-hero">
+    <div class="portal-clock-side">
+      <div class="portal-clock" id="portal-clock">--:--</div>
+      <div class="portal-date" id="portal-date">Chargement de la date…</div>
+      <div class="portal-kicker">MAISON · ACCUEIL</div>
+    </div>
+    <button type="button" class="portal-weather-side" onclick="showPage('weather')" aria-label="Ouvrir la météo internationale">
+      <span class="portal-weather-name" id="portal-weather-name">Bruxelles</span>
+      <span class="portal-weather-temp" id="portal-weather-temp">-- °C</span>
+      <span class="portal-weather-condition" id="portal-weather-condition">Météo en cours…</span>
+      <span class="portal-weather-today" id="portal-weather-today">Prévisions du jour</span>
+    </button>
+  </div>
+  <div class="portal-heading">Mes rubriques</div>
+  <div class="portal-grid">
+    <div class="portal-row">
+      <div class="portal-item"><button type="button" class="portal-card" onclick="showPage('general')"><span class="portal-symbol">▦</span><span class="portal-name">Général</span><span class="portal-desc">Tableau complet et réglages</span></button></div>
+      <div class="portal-item"><button type="button" class="portal-card" onclick="showPage('weather')"><span class="portal-symbol">☀</span><span class="portal-name">Météo</span><span class="portal-desc">4 villes et prévisions</span></button></div>
+    </div>
+    <div class="portal-row">
+      <div class="portal-item"><button type="button" class="portal-card" onclick="showPage('agenda')"><span class="portal-symbol">▤</span><span class="portal-name">Agenda</span><span class="portal-desc">Événements familiaux</span></button></div>
+      <div class="portal-item"><button type="button" class="portal-card" onclick="showPage('notes')"><span class="portal-symbol">✎</span><span class="portal-name">Notes</span><span class="portal-desc">Mémos et sauvegardes</span></button></div>
+    </div>
+    <div class="portal-row">
+      <div class="portal-item"><button type="button" class="portal-card" onclick="showPage('courses')"><span class="portal-symbol">✓</span><span class="portal-name">Courses</span><span class="portal-desc">Liste Bring! en lecture seule</span></button></div>
+      <div class="portal-item"><button type="button" class="portal-card" onclick="showPage('actualites')"><span class="portal-symbol">▤</span><span class="portal-name">Actualités</span><span class="portal-desc">Belgique, Maurice, monde, tech</span></button></div>
+    </div>
+    <div class="portal-row">
+      <div class="portal-item"><button type="button" class="portal-card" onclick="showPage('photos')"><span class="portal-symbol">▧</span><span class="portal-name">Paysages</span><span class="portal-desc">Diaporama et mode cadre</span></button></div>
+      <div class="portal-item"><button type="button" class="portal-card" onclick="showPage('cameras')"><span class="portal-symbol">▣</span><span class="portal-name">Caméras</span><span class="portal-desc">En attente de connexion</span></button></div>
+    </div>
+  </div>
+  <div class="portal-foot">Touchez une rubrique pour l’ouvrir. « Général » retrouve l’ancien tableau de bord.</div>
+</div>
+<div class="page" id="page-general">
   <div class="hero">
     <div class="hero-left">
       <div class="clock" id="clock">--:--</div>
@@ -346,7 +413,7 @@ body.night .news-headline { color:#cadce6; }
     <p class="muted small" style="margin:5px 0 0">Horaires affichés selon l'heure de cet iPad. Les actualisations GitHub ne sont pas instantanées.</p>
   </div>
   <button class="photo-entry" type="button" onclick="showPage('photos')" aria-label="Ouvrir le diaporama photos">
-    <span class="photo-entry-title">▧ &nbsp;Diaporama familial</span>
+    <span class="photo-entry-title">▧ &nbsp;Diaporama de paysages</span>
     <span class="photo-entry-sub" id="photo-count-home">Photos privées sur l’iPad · Toucher pour ouvrir</span>
   </button>
 
@@ -367,7 +434,7 @@ body.night .news-headline { color:#cadce6; }
       <div class="idle-field">
         <label for="idle-mode-choice">Afficher pendant la veille</label>
         <select id="idle-mode-choice" onchange="changeIdlePreferences()">
-          <option value="photos">Diaporama familial</option>
+          <option value="photos">Diaporama de paysages</option>
           <option value="clock">Grande horloge</option>
           <option value="off">Désactivé</option>
         </select>
@@ -484,7 +551,7 @@ body.night .news-headline { color:#cadce6; }
 <div class="page" id="page-photos">
   <div class="panel">
     <div class="photo-page-header">
-      <h1>Diaporama familial</h1>
+      <h1>Diaporama de paysages</h1>
       <p>Deux photos de démonstration sont incluses pour vérifier le diaporama. Tu peux essayer d’ajouter des photos personnelles depuis la photothèque : si l’import fonctionne, elles seront conservées <strong>uniquement dans Safari</strong>, et ne seront jamais envoyées sur GitHub. Cette fonction reste expérimentale sur iOS 9. La galerie de démonstration est publique, pas tes photos personnelles.</p>
       <div class="field" style="margin-top:11px"><label for="photo-file-input">Tester l’import d’une photo privée depuis l’iPad (une à la fois)</label><input type="file" id="photo-file-input" accept="image/*" onchange="addPrivatePhotos(this)"></div>
       <button class="secondary smallbtn" type="button" onclick="removePrivatePhotos()">Effacer les photos stockées sur l’iPad</button>
@@ -540,7 +607,7 @@ body.night .news-headline { color:#cadce6; }
       <div class="idle-clock-detail" id="idle-clock-detail">Heure locale</div>
     </div>
     <div id="idle-photo-layer" class="idle-photo-layer" style="display:none">
-      <img id="idle-photo-image" alt="Photo familiale" onload="idlePhotoLoaded()" onerror="idlePhotoError()">
+      <img id="idle-photo-image" alt="Photo de paysage" onload="idlePhotoLoaded()" onerror="idlePhotoError()">
       <div class="idle-photo-time" id="idle-photo-time">--:--</div>
     </div>
     <div class="idle-wake">Toucher pour revenir</div>
@@ -667,6 +734,8 @@ body.night .news-headline { color:#cadce6; }
     var d=new Date();
     el('clock').innerHTML=pad(d.getHours())+':'+pad(d.getMinutes());
     el('date').innerHTML=days[d.getDay()]+' '+d.getDate()+' '+months[d.getMonth()]+' '+d.getFullYear();
+    el('portal-clock').innerHTML=el('clock').innerHTML;
+    el('portal-date').innerHTML=el('date').innerHTML;
   }
   function parseDate(value) {
     var m=/^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value);
@@ -747,7 +816,9 @@ body.night .news-headline { color:#cadce6; }
     el('notes-preview').innerHTML=t ? escapeHtml(t.substring(0,95)) : 'Touchez « Notes » pour écrire un mémo.';
   }
   window.showPage=function(name) {
-    var ids=['home','agenda','notes','cameras','weather','photos','courses','actualites'],i,active;
+    var ids=['home','general','agenda','notes','cameras','weather','photos','courses','actualites'],i,active;
+    var labels={general:'Vue générale',agenda:'Agenda familial',notes:'Notes',cameras:'Caméras',weather:'Météo internationale',photos:'Diaporama',courses:'Courses Bring!',actualites:'Actualités'};
+    if(!el('page-'+name)) name='home';
     if(name!=='photos') {
       photoFrameActive=false;
       if(photoTimer) { window.clearInterval(photoTimer); photoTimer=null; }
@@ -756,10 +827,10 @@ body.night .news-headline { color:#cadce6; }
     for(i=0;i<ids.length;i++) {
       active=(ids[i]===name);
       el('page-'+ids[i]).className=active?'page active':'page';
-      if(ids[i]!=='weather') {
-        el('nav-'+ids[i]).className=(active || (name==='weather' && ids[i]==='home'))?'active':'';
-      }
     }
+    el('detail-nav').style.display=name==='home'?'none':'block';
+    el('display-tools').style.display=name==='home'?'none':'block';
+    el('detail-page-name').innerHTML=labels[name]?escapeHtml(labels[name]):'';
     window.scrollTo(0,0);
     if(name==='photos') {
       if(!photoListReady) loadPhotos();
@@ -885,6 +956,19 @@ body.night .news-headline { color:#cadce6; }
       if(d.stale) msg+=' (ancien)';
     } else msg=info.name+'<br>Météo indisponible';
     el('weather-tile-summary').innerHTML=msg+'<br><span class="small">4 villes à consulter</span>';
+    el('portal-weather-name').innerHTML=escapeHtml(info.name);
+    if(d && d.current && isNumber(d.current.temperature_2m)) {
+      el('portal-weather-temp').innerHTML=roundValue(d.current.temperature_2m)+' °C';
+      el('portal-weather-condition').innerHTML=escapeHtml(weatherDescription(d.current.weather_code))+(d.stale?' · Cache':'');
+      var forecast=d.daily,high='—',low='—';
+      if(forecast && forecast.temperature_2m_max && forecast.temperature_2m_max.length) high=roundValue(forecast.temperature_2m_max[0]);
+      if(forecast && forecast.temperature_2m_min && forecast.temperature_2m_min.length) low=roundValue(forecast.temperature_2m_min[0]);
+      el('portal-weather-today').innerHTML='Aujourd’hui : '+high+' °C / '+low+' °C';
+    } else {
+      el('portal-weather-temp').innerHTML='-- °C';
+      el('portal-weather-condition').innerHTML='Données indisponibles';
+      el('portal-weather-today').innerHTML='Touchez pour les prévisions';
+    }
   }
   function showSelectedWeather() {
     var info=cityById(selectedCity),data=cityData[selectedCity],cur,daily,i,str='',label,high,low,code,stamp;
@@ -946,6 +1030,7 @@ body.night .news-headline { color:#cadce6; }
     } catch(e) {}
   }
   weatherInitCached();
+  updateMainWeatherTile();
   window.loadWeather=function() {
     if(weatherBusy) return;
     weatherBusy=true;
@@ -980,6 +1065,7 @@ body.night .news-headline { color:#cadce6; }
         }
         weatherCacheSave();
       }
+      var freshCitiesLoaded=successes;
       if(successes) {
         el('cities-loading').innerHTML=successes+' ville(s) chargée(s). Dernière récupération : '+
           escapeHtml(stamp.slice(0,16).replace('T',' ')+' UTC')+
@@ -990,7 +1076,7 @@ body.night .news-headline { color:#cadce6; }
           'Vérifie sur GitHub Actions que « Publier iPad Mural et météo » a réussi'+
           (detail?' ('+escapeHtml(detail)+')':'')+'.';
       }
-      if(!successes) weatherLocalCache=true;
+      if(!freshCitiesLoaded) weatherLocalCache=true;
       updateFreshIndicators();
       drawCityCards();showSelectedWeather();updateMainWeatherTile();
     }
@@ -1474,7 +1560,7 @@ body.night .news-headline { color:#cadce6; }
   var newsCategories=['belgique','maurice','monde','tech'];
   var newsNames={belgique:'Belgique',maurice:'Île Maurice',monde:'International',tech:'Technologie'};
   var selectedNewsCategory='belgique';
-  var newsData=null, newsBusy=false;
+  var newsData=null, newsBusy=false, newsUsedCache=false;
   function isSafeNewsUrl(value) {
     return typeof value==='string' && /^https:\/\/[a-z0-9][^\s<>"']+$/i.test(value) && value.length<=1000;
   }
@@ -1507,7 +1593,8 @@ body.night .news-headline { color:#cadce6; }
     stamp=group && group.fetched_at_utc ? group.fetched_at_utc : newsData.updated_at_utc;
     el('news-status').innerHTML=escapeHtml(newsNames[selectedNewsCategory])+' · '+total+' titre'+(total>1?'s':'')+
       ' · récupération : '+(parseSyncUtc(stamp)!==null?escapeHtml(newsDateLabel(stamp)):'non disponible')+
-      (group && group.stale?' · Flux indisponible : dernière copie conservée':'');
+      (group && group.stale?' · Flux indisponible : dernière copie conservée':'')+
+      (newsUsedCache?' · Derniers titres en cache':'');
     for(i=0;i<items.length && i<8;i++){
       item=items[i];
       if(!item || !isSafeNewsUrl(item.url) || typeof item.title!=='string')continue;
@@ -1518,34 +1605,59 @@ body.night .news-headline { color:#cadce6; }
     }
     el('news-items').innerHTML=output || '<p class="empty">Aucun article disponible actuellement dans cette rubrique. La source RSS peut être momentanément indisponible.</p>';
   }
+  /* V3.4 : conserver les derniers titres valides si un flux est vide ou si
+     le fichier distant est inaccessible. Les copies sont explicitement signalées. */
   window.loadNews=function() {
     if(newsBusy)return;
     newsBusy=true;
     var xhr=new XMLHttpRequest(),done=false;
-    var timer=window.setTimeout(function(){ try{xhr.abort();}catch(e){} complete(null); },15000);
+    var timer=window.setTimeout(function(){try{xhr.abort();}catch(e){} complete(null);},15000);
+    function previousNews(){
+      try{
+        var old=JSON.parse(load('ipad_mural_news_v33')||'null');
+        if(old && old.version===1 && old.categories) return old;
+      }catch(e){}
+      return null;
+    }
+    function countItems(group){
+      return group && Object.prototype.toString.call(group.items)==='[object Array]' ? group.items.length : 0;
+    }
     function complete(obj){
       if(done)return;
       done=true;newsBusy=false;window.clearTimeout(timer);
-      if(obj && obj.categories && obj.version===1){
+      var old=previousNews(),groups=['belgique','maurice','monde','tech'],i,key,oldGroup,newGroup,total=0,cached=false;
+      if(obj && obj.version===1 && obj.categories){
+        for(i=0;i<groups.length;i++){
+          key=groups[i];newGroup=obj.categories[key];
+          oldGroup=old && old.categories ? old.categories[key] : null;
+          if(!countItems(newGroup) && countItems(oldGroup)){
+            obj.categories[key]={source:oldGroup.source||'',fetched_at_utc:oldGroup.fetched_at_utc||'',
+              items:oldGroup.items.slice(0,8),stale:true};
+            cached=true;
+          }
+          total+=countItems(obj.categories[key]);
+        }
+      }
+      if(total>0){
         newsData=obj;
         newsPublishedAt=typeof obj.updated_at_utc==='string'?obj.updated_at_utc:'';
-        try{ window.localStorage.setItem('ipad_mural_news_v33',JSON.stringify(obj)); }catch(e){}
-      } else if(!newsData) {
-        try {
-          var old=JSON.parse(window.localStorage.getItem('ipad_mural_news_v33')||'null');
-          if(old && old.categories){newsData=old;newsPublishedAt=old.updated_at_utc||'';}
-        }catch(e){}
+        newsUsedCache=cached;
+        store('ipad_mural_news_v33',JSON.stringify(obj));
+      }else{
+        if(old){newsData=old;newsPublishedAt=old.updated_at_utc||'';}
+        newsUsedCache=!!newsData;
       }
       renderNews();updateFreshIndicators();
       if(el('news-home-sub'))el('news-home-sub').innerHTML=newsData ?
-        'Belgique · Maurice · Monde · Tech · Titres disponibles' : 'Belgique · Maurice · Monde · Actualités indisponibles';
+        'Belgique · Maurice · Monde · Tech · '+(newsUsedCache?'Titres en cache':'Titres disponibles') :
+        'Belgique · Maurice · Monde · Actualités indisponibles';
     }
     try{
       xhr.open('GET','actualites.json?t='+((new Date()).getTime()),true);
       xhr.onreadystatechange=function(){
         if(xhr.readyState!==4 || done)return;
         var obj=null;
-        if(xhr.status===200){ try{obj=JSON.parse(xhr.responseText);}catch(e){} }
+        if(xhr.status===200){try{obj=JSON.parse(xhr.responseText);}catch(e){}}
         complete(obj);
       };
       xhr.onerror=function(){complete(null);};
