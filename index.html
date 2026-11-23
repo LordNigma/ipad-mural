@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
-<title>Maison - iPad Mural V3.7</title>
+<title>Maison - iPad Mural V3.8</title>
 <style>
 /* CSS volontairement simple : Safari iOS 9, sans frameworks ni polices externes. */
 * { -webkit-box-sizing:border-box; box-sizing:border-box; }
@@ -381,6 +381,54 @@ body.night .important-summary { background:#0c252b; border-color:#345161; }
 body.night .google-panel { background:#0c2230; }
 body.night .google-event { background:#122b36; }
 
+
+/* V3.8 — Grille mensuelle de Google Agenda. Tableau classique compatible Safari iOS 9. */
+.google-view-switch { margin:12px 0 14px; overflow:hidden; }
+.google-view-switch button { min-height:39px; margin:0 7px 7px 0; padding:8px 18px; }
+.google-view-switch button.selected { border-color:#a4d6e5; background:#376579; color:#fff; }
+.google-month-toolbar { overflow:hidden; margin:0 0 8px; }
+.google-month-toolbar .google-month-title { display:inline-block; font-size:22px; color:#f1f8fa;
+  font-weight:bold; margin:8px 0; vertical-align:middle; }
+.google-month-toolbar button { margin:2px 7px 6px 0; min-height:39px; }
+.google-month-toolbar .google-month-actions { float:right; }
+.google-month-table { width:100%; table-layout:fixed; border-collapse:separate; border-spacing:3px;
+  margin:6px 0; }
+.google-month-table th { font-size:12px; color:#afc8d5; font-weight:bold;
+  text-align:center; padding:5px 0; }
+.google-month-table td { width:14.285%; padding:0; vertical-align:top; }
+.google-date-cell { width:100%; min-height:92px; display:block; padding:8px 5px;
+  border:1px solid #37586a; background:#203946; border-radius:8px;
+  color:#ecf4f8; text-align:left; -webkit-appearance:none; appearance:none;
+  line-height:1.2; font-size:13px; overflow:hidden; }
+.google-date-cell .gday { display:block; font-weight:bold; font-size:17px; margin-bottom:5px; }
+.google-date-cell .gevent-peek { display:block; margin-top:4px; font-size:11px;
+  color:#d8ecf4; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.google-date-cell .gcount { display:block; color:#9ed3e2; font-size:11px; margin-top:3px; }
+.google-date-cell.other-month { opacity:.36; }
+.google-date-cell.not-covered { background:#162833; border-style:dashed; color:#9baeb8; }
+.google-date-cell.not-covered .gevent-peek { color:#9baeb8; }
+.google-date-cell.today { border-color:#e6c883; }
+.google-date-cell.selected { border:2px solid #93d5e6; background:#31556a; padding:7px 4px; }
+.google-month-footnote { color:#b7cbd7; font-size:13px; line-height:1.5; margin:10px 0 12px; }
+.google-month-day-detail { border:1px solid #41677a; background:#213b49;
+  border-radius:10px; margin-top:12px; padding:13px; }
+.google-month-day-detail h3 { font-size:18px; color:#e7f5f9; margin:0 0 9px; }
+.google-month-day-detail .google-event { margin:7px 0; }
+.google-month-day-detail .empty { margin-bottom:0; }
+body.night .google-date-cell { background:#102632; border-color:#294652; }
+body.night .google-date-cell.not-covered { background:#0a1922; }
+body.night .google-date-cell.selected { background:#183d4e; border-color:#83bcd2; }
+body.night .google-month-day-detail { background:#102b39; }
+@media (max-width:700px) {
+ .google-month-toolbar .google-month-title { font-size:19px; }
+ .google-month-toolbar .google-month-actions { float:none; display:block; }
+ .google-date-cell { min-height:75px; padding:5px 3px; font-size:11px; }
+ .google-date-cell .gday { font-size:15px; }
+ .google-date-cell.selected { padding:4px 2px; }
+ .google-date-cell .gevent-peek { font-size:10px; }
+ .google-month-table { border-spacing:2px; }
+}
+@media (max-width:420px) { .google-date-cell .gevent-peek { display:none; } }
 </style>
 </head>
 <body>
@@ -554,6 +602,25 @@ body.night .google-event { background:#122b36; }
       <button type="button" class="secondary" onclick="lockGoogleCalendar()">Verrouiller</button>
     </div>
     <div class="google-status" id="google-calendar-status" aria-live="polite">Saisis la clé pour consulter les rendez-vous Google. La clé reste seulement en mémoire pendant cette session.</div>
+    <div id="google-calendar-view-controls" style="display:none">
+      <div class="google-view-switch">
+        <button id="google-view-month-btn" class="secondary selected" type="button" onclick="googleSetView('month')">Mois</button>
+        <button id="google-view-list-btn" class="secondary" type="button" onclick="googleSetView('list')">Liste</button>
+      </div>
+      <div id="google-calendar-month-view">
+        <div class="google-month-toolbar">
+          <span id="google-month-title" class="google-month-title">Calendrier mensuel</span>
+          <div class="google-month-actions">
+            <button type="button" class="secondary smallbtn" onclick="googleChangeMonth(-1)" aria-label="Mois précédent">&#8592; Précédent</button>
+            <button type="button" class="secondary smallbtn" onclick="googleJumpToday()">Ce mois</button>
+            <button type="button" class="secondary smallbtn" onclick="googleChangeMonth(1)" aria-label="Mois suivant">Suivant &#8594;</button>
+          </div>
+        </div>
+        <div id="google-calendar-month-grid"></div>
+        <div id="google-calendar-coverage" class="google-month-footnote"></div>
+        <div id="google-calendar-day-detail" class="google-month-day-detail"></div>
+      </div>
+    </div>
     <div id="google-calendar-events" class="empty">Calendrier verrouillé.</div>
   </div>
 </div>
@@ -734,7 +801,7 @@ body.night .google-event { background:#122b36; }
     <div class="idle-wake">Toucher pour revenir</div>
   </div>
 </div>
-<div class="footer">Tableau de bord V3.7 · Safari iOS 9 · météo, Bring! et actualités via GitHub</div>
+<div class="footer">Tableau de bord V3.8 · Safari iOS 9 · météo, Bring! et actualités via GitHub</div>
 <script src="sjcl.js"></script>
 <script>
 /* JavaScript ES5 : compatible avec Safari 9. */
@@ -2041,7 +2108,27 @@ body.night .google-event { background:#122b36; }
      Seul calendar.enc.json (SJCL AES-256-CCM) est téléchargé.
      La phrase secrète et les événements déchiffrés restent en RAM. */
   var googleKey=null,googleData=null,googleBusy=false,googleCachedAt=0;
+  /* Affichage mensuel par défaut. Les rendez-vous déchiffrés restent en RAM. */
+  var googleViewMode='month',googleViewYear=(new Date()).getFullYear();
+  var googleViewMonth=(new Date()).getMonth(),googleSelectedDay='';
   function googleStatus(t) { el('google-calendar-status').innerHTML=escapeHtml(t); }
+  function googleLocalIso(d) {
+    return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+  }
+  function googleUtcIsoDay(d) {
+    return d.getUTCFullYear()+'-'+pad(d.getUTCMonth()+1)+'-'+pad(d.getUTCDate());
+  }
+  function googleDateFromIso(iso) {
+    var m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(iso||''),d;
+    if(!m)return null;
+    d=new Date(+m[1],+m[2]-1,+m[3]);
+    if(d.getFullYear()!==+m[1]||d.getMonth()!==+m[2]-1||d.getDate()!==+m[3])return null;
+    return d;
+  }
+  function googleFormatDay(iso) {
+    var d=googleDateFromIso(iso);
+    return d ? days[d.getDay()]+' '+d.getDate()+' '+months[d.getMonth()]+' '+d.getFullYear() : 'Date inconnue';
+  }
   function googleDate(row) {
     if(row.all_day && /^\d{4}-\d{2}-\d{2}$/.test(row.date||''))return prettyDate(row.date)+' · Toute la journée';
     var timestamp=parseSyncUtc(row.start_utc);
@@ -2052,18 +2139,137 @@ body.night .google-event { background:#122b36; }
     return date+' · '+time+(endMs && end.getDate()===d.getDate() && end.getMonth()===d.getMonth() ?
       '–'+pad(end.getHours())+':'+pad(end.getMinutes()):'');
   }
+  function googleEventBounds(row) {
+    var start=parseSyncUtc(row.start_utc||''),finish=parseSyncUtc(row.end_utc||'');
+    var first,last,n,d;
+    if(start===null||typeof row.title!=='string'||row.title.length>250)return null;
+    if(row.all_day && googleDateFromIso(row.date||'')) {
+      first=row.date;
+      n=(finish!==null&&finish>start)?Math.ceil((finish-start)/86400000):1;
+      if(n>366)n=366;
+      d=googleDateFromIso(first);
+      last=googleUtcIsoDay(new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()+n-1)));
+    } else {
+      first=googleLocalIso(new Date(start));
+      last=googleLocalIso(new Date(finish!==null&&finish>start?finish-1:start));
+    }
+    return {first:first,last:last};
+  }
+  function googleEventsForDay(iso) {
+    var a=googleData&&googleData.events,found=[],i,row,b;
+    if(!a)return found;
+    for(i=0;i<a.length;i++) {
+      row=a[i];if(!row)continue;
+      b=googleEventBounds(row);
+      if(b&&iso>=b.first&&iso<=b.last)found.push(row);
+    }
+    return found;
+  }
+  function googleCoverage() {
+    var obj=googleData||{},t=parseSyncUtc(obj.updated_at_utc||''),n=Number(obj.days);
+    if(t===null||!(n>0&&n<=366))return null;
+    /* La copie couvre approximativement ce jour et les N prochains jours.
+       Le script source démarre à J-1 et s'arrête à J+N (heures non complètes). */
+    return {first:googleLocalIso(new Date(t)),last:googleLocalIso(new Date(t+n*86400000))};
+  }
+  function googleIsCovered(iso,coverage) {
+    return !!(coverage&&iso>=coverage.first&&iso<=coverage.last);
+  }
+  function googleEventMarkup(row) {
+    return '<div class="google-event"><strong>'+escapeHtml(row.title)+'</strong><span>'+escapeHtml(googleDate(row))+'</span></div>';
+  }
+  function googleRenderDay() {
+    var node=el('google-calendar-day-detail'),iso=googleSelectedDay,covered=googleCoverage();
+    var a=googleEventsForDay(iso),out='<h3>'+escapeHtml(googleFormatDay(iso))+'</h3>',i;
+    if(!googleIsCovered(iso,covered)) {
+      out+='<div class="empty">Jour hors de la période synchronisée : absence de rendez-vous non garantie.</div>';
+    } else if(!a.length) {
+      out+='<div class="empty">Aucun rendez-vous signalé pour ce jour.</div>';
+    } else {
+      for(i=0;i<a.length;i++)out+=googleEventMarkup(a[i]);
+    }
+    node.innerHTML=out;
+  }
+  function googleRenderMonth() {
+    if(!googleData)return;
+    var title=el('google-month-title'),grid=el('google-calendar-month-grid'),foot=el('google-calendar-coverage');
+    var cover=googleCoverage(),first=new Date(googleViewYear,googleViewMonth,1);
+    var offset=(first.getDay()+6)%7; /* lundi premier jour */
+    var today=googleLocalIso(new Date()),weekdays=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+    var out='<table class="google-month-table" role="grid" aria-label="Calendrier mensuel"><thead><tr>',i,w,date,iso,list,preview,classes;
+    title.innerHTML=months[googleViewMonth].charAt(0).toUpperCase()+months[googleViewMonth].slice(1)+' '+googleViewYear;
+    for(i=0;i<7;i++)out+='<th scope="col">'+weekdays[i]+'</th>';
+    out+='</tr></thead><tbody>';
+    for(i=0;i<42;i++) {
+      if(i%7===0)out+='<tr>';
+      date=new Date(googleViewYear,googleViewMonth,i-offset+1);
+      iso=googleLocalIso(date);list=googleEventsForDay(iso);
+      classes='google-date-cell';
+      if(date.getMonth()!==googleViewMonth)classes+=' other-month';
+      if(!googleIsCovered(iso,cover))classes+=' not-covered';
+      if(iso===today)classes+=' today';
+      if(iso===googleSelectedDay)classes+=' selected';
+      out+='<td><button type="button" class="'+classes+'" onclick="googleSelectDay(\''+iso+'\')" aria-label="'+escapeHtml(googleFormatDay(iso))+', '+list.length+' événement(s)">';
+      out+='<span class="gday">'+date.getDate()+'</span>';
+      if(list.length) {
+        out+='<span class="gevent-peek">'+escapeHtml(list[0].title)+'</span>';
+        if(list.length>1)out+='<span class="gcount">+'+(list.length-1)+' autre(s)</span>';
+      } else if(!googleIsCovered(iso,cover))out+='<span class="gcount">Hors période</span>';
+      out+='</button></td>';
+      if(i%7===6)out+='</tr>';
+    }
+    out+='</tbody></table>';
+    grid.innerHTML=out;
+    foot.innerHTML=cover ? 'Période couverte approximative : du '+escapeHtml(googleFormatDay(cover.first))+' au '+escapeHtml(googleFormatDay(cover.last))+'. Les jours grisés ne sont pas synchronisés ; ils ne sont pas nécessairement libres.' :
+      'Période de synchronisation inconnue : la grille ne permet pas de garantir les jours sans événement.';
+    if(googleData.truncated||googleData.skipped_recurring_rules)foot.innerHTML+=' Attention : certains événements peuvent manquer (limite de volume ou récurrences non prises en charge).';
+    googleRenderDay();
+  }
   function googleRender() {
-    var node=el('google-calendar-events'),arr=googleData&&googleData.events,out='',i,row,count=0;
-    if(!arr){node.innerHTML='<div class="empty">Calendrier verrouillé.</div>';return;}
-    if(!arr.length){node.innerHTML='<div class="empty">Aucun rendez-vous disponible pour la période.</div>';return;}
+    var list=el('google-calendar-events'),controls=el('google-calendar-view-controls');
+    var monthPanel=el('google-calendar-month-view'),arr=googleData&&googleData.events,out='',i,row,count=0;
+    if(!arr){
+      controls.style.display='none';list.style.display='block';
+      list.innerHTML='<div class="empty">Calendrier verrouillé.</div>';return;
+    }
+    controls.style.display='block';
+    el('google-view-month-btn').className='secondary'+(googleViewMode==='month'?' selected':'');
+    el('google-view-list-btn').className='secondary'+(googleViewMode==='list'?' selected':'');
+    monthPanel.style.display=googleViewMode==='month'?'block':'none';
+    list.style.display=googleViewMode==='list'?'block':'none';
+    if(googleViewMode==='month'){googleRenderMonth();return;}
+    if(!arr.length){list.innerHTML='<div class="empty">Aucun rendez-vous disponible pour la période.</div>';return;}
     for(i=0;i<arr.length && count<180;i++){
       row=arr[i];
       if(!row || typeof row.title!=='string' || row.title.length>250 || !parseSyncUtc(row.start_utc))continue;
-      out+='<div class="google-event"><strong>'+escapeHtml(row.title)+'</strong><span>'+escapeHtml(googleDate(row))+'</span></div>';
-      count++;
+      out+=googleEventMarkup(row);count++;
     }
-    node.innerHTML=out || '<div class="empty">Aucun rendez-vous valide.</div>';
+    list.innerHTML=out || '<div class="empty">Aucun rendez-vous valide.</div>';
   }
+  window.googleSetView=function(view) {
+    if(view!=='month'&&view!=='list')return;
+    googleViewMode=view;googleRender();
+  };
+  window.googleSelectDay=function(iso) {
+    if(!googleDateFromIso(iso))return;
+    googleSelectedDay=iso;
+    var d=googleDateFromIso(iso);
+    if(d.getMonth()!==googleViewMonth||d.getFullYear()!==googleViewYear){
+      googleViewYear=d.getFullYear();googleViewMonth=d.getMonth();
+    }
+    googleRenderMonth();
+  };
+  window.googleChangeMonth=function(delta) {
+    if(!googleData||delta!==-1&&delta!==1)return;
+    var d=new Date(googleViewYear,googleViewMonth+delta,1);
+    googleViewYear=d.getFullYear();googleViewMonth=d.getMonth();
+    googleSelectedDay=googleLocalIso(d);
+    googleRenderMonth();
+  };
+  window.googleJumpToday=function() {
+    var d=new Date();googleViewYear=d.getFullYear();googleViewMonth=d.getMonth();
+    googleSelectedDay=googleLocalIso(d);googleRenderMonth();
+  };
   window.lockGoogleCalendar=function(){
     googleKey=null;googleData=null;googleCachedAt=0;
     el('google-calendar-key').value='';
@@ -2083,7 +2289,9 @@ body.night .google-event { background:#122b36; }
         try {
           var raw=sjcl.decrypt(googleKey,cipher),obj=JSON.parse(raw);
           if(!obj || obj.v!==1 || Object.prototype.toString.call(obj.events)!=='[object Array]' || obj.events.length>180)throw Error('format');
-          googleData=obj;googleCachedAt=(new Date()).getTime();googleRender();
+          googleData=obj;googleCachedAt=(new Date()).getTime();
+          if(!googleSelectedDay)googleSelectedDay=googleLocalIso(new Date());
+          googleRender();
           var stamp=parseSyncUtc(obj.updated_at_utc),msg='Lecture seule · '+obj.events.length+' événement(s) sur '+obj.days+' jours.';
           if(stamp!==null){msg+=' Synchronisé : '+localSyncTime(stamp)+'.';if((new Date()).getTime()-stamp>3*3600000)msg+=' Attention : copie ancienne.';}
           if(obj.truncated)msg+=' Liste tronquée.';
