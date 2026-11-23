@@ -419,6 +419,26 @@ body.night .google-date-cell { background:#102632; border-color:#294652; }
 body.night .google-date-cell.not-covered { background:#0a1922; }
 body.night .google-date-cell.selected { background:#183d4e; border-color:#83bcd2; }
 body.night .google-month-day-detail { background:#102b39; }
+/* V3.9 : sources clairement identifiées, grille mensuelle unifiée. */
+.google-event.local { border-left-color:#efd091; background:#403b32; }
+.google-event.remote { border-left-color:#87cbe5; }
+.google-event .event-source { display:inline-block; font-size:12px; font-weight:bold;
+  color:#f5db9c; margin:0 0 4px; }
+.google-event.remote .event-source { color:#a7def3; }
+.google-date-cell .gevent-peek.local { color:#f5d591; }
+.google-date-cell .gevent-peek.remote { color:#bce8fa; }
+.google-legend { font-size:13px; color:#d2e2e9; margin:10px 0 12px; }
+.google-dot { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:5px; }
+.google-dot.local { background:#efd091; }
+.google-dot.remote { background:#87cbe5; }
+.google-legend span.legend-part { display:inline-block; margin-right:16px; }
+.google-vault { border:1px solid #456778; border-radius:9px; padding:12px;
+  background:#1c3542; margin:12px 0; }
+.google-vault p { font-size:13px; line-height:1.5; color:#c1d4df; }
+.google-vault label { font-size:14px; }
+.google-vault input[type=checkbox] { width:20px; height:20px; vertical-align:middle; }
+.google-vault button { margin:5px 7px 5px 0; }
+body.night .google-event.local { background:#302e29; }
 @media (max-width:700px) {
  .google-month-toolbar .google-month-title { font-size:19px; }
  .google-month-toolbar .google-month-actions { float:none; display:block; }
@@ -592,8 +612,8 @@ body.night .google-month-day-detail { background:#102b39; }
   <div class="panel"><h2>Planning familial</h2><div id="events-list" class="empty">Aucun événement enregistré.</div><p class="agenda-help">Les événements anciens restent disponibles jusqu'à leur suppression. La suppression demande confirmation.</p></div>
 
   <div class="panel" id="google-calendar-panel">
-    <h2 class="google-title">Calendrier Google partagé · lecture seule</h2>
-    <p>Copie chiffrée d'un seul calendrier choisi, indépendante de l'agenda local. Aucun mot de passe Google, aucune adresse iCal secrète sur l'iPad ou GitHub.</p>
+    <h2 class="google-title">Calendrier familial unifié · iPad + Google</h2>
+    <p>Vue mensuelle commune : tes événements créés sur l'iPad et ceux de ton unique calendrier Google partagé. Les événements Google restent en lecture seule. Aucun mot de passe Google ni lien iCal secret sur l'iPad ou GitHub.</p>
     <div class="field"><label for="google-calendar-key">Clé de consultation du calendrier (différente de Bring!)</label>
       <input id="google-calendar-key" type="password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Clé définie dans Google Apps Script"></div>
     <div class="google-buttons">
@@ -601,8 +621,20 @@ body.night .google-month-day-detail { background:#102b39; }
       <button type="button" class="secondary" onclick="refreshGoogleCalendar()">Actualiser</button>
       <button type="button" class="secondary" onclick="lockGoogleCalendar()">Verrouiller</button>
     </div>
-    <div class="google-status" id="google-calendar-status" aria-live="polite">Saisis la clé pour consulter les rendez-vous Google. La clé reste seulement en mémoire pendant cette session.</div>
-    <div id="google-calendar-view-controls" style="display:none">
+    <div class="google-vault">
+      <label><input type="checkbox" id="google-remember-key"> Conserver ma clé Google sous forme chiffrée sur cet iPad</label>
+      <p>Facultatif. Pour éviter de retaper la longue clé, définis une <strong>phrase locale forte d'au moins 14 caractères</strong>. Elle sera nécessaire après chaque rechargement. Ne réutilise pas une phrase existante.</p>
+      <div class="field"><label for="google-local-pass">Phrase locale de déverrouillage (14 caractères minimum)</label>
+        <input id="google-local-pass" type="password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Phrase locale distincte de la clé Google"></div>
+      <div class="google-buttons">
+        <button type="button" class="secondary" onclick="unlockSavedGoogleCalendar()">Déverrouiller avec la phrase locale</button>
+        <button type="button" class="secondary" onclick="forgetSavedGoogleCalendar()">Effacer la clé mémorisée</button>
+      </div>
+      <p id="google-vault-status">Aucune clé enregistrée sur cet iPad.</p>
+    </div>
+    <div class="google-status" id="google-calendar-status" aria-live="polite">La vue mensuelle affiche déjà tes événements locaux. Pour ajouter Google, saisis la clé de consultation ou utilise ta phrase locale si une clé chiffrée a été enregistrée.</div>
+    <div id="google-calendar-view-controls">
+      <div class="google-legend"><span class="legend-part"><i class="google-dot local"></i> Sur cet iPad</span><span class="legend-part"><i class="google-dot remote"></i> Google (lecture seule)</span></div>
       <div class="google-view-switch">
         <button id="google-view-month-btn" class="secondary selected" type="button" onclick="googleSetView('month')">Mois</button>
         <button id="google-view-list-btn" class="secondary" type="button" onclick="googleSetView('list')">Liste</button>
@@ -621,7 +653,7 @@ body.night .google-month-day-detail { background:#102b39; }
         <div id="google-calendar-day-detail" class="google-month-day-detail"></div>
       </div>
     </div>
-    <div id="google-calendar-events" class="empty">Calendrier verrouillé.</div>
+    <div id="google-calendar-events" class="empty">Tes événements locaux apparaissent même lorsque Google est verrouillé.</div>
   </div>
 </div>
 <div class="page" id="page-notes">
@@ -1231,6 +1263,7 @@ body.night .google-month-day-detail { background:#102b39; }
     }
     if(name==='actualites') renderNews();
     if(name==='notes') renderImportantList();
+    if(name==='agenda') googleRender();
   };
   window.addEvent=function() {
     var title=el('event-title').value.replace(/^\s+|\s+$/g,'');
@@ -1252,6 +1285,7 @@ body.night .google-month-day-detail { background:#102b39; }
     el('event-title').value='';el('event-time').value='';
     window.setEventDate('today');
     refreshEvents();
+    googleRender();
   };
   window.deleteEvent=function(id) {
     var newEvents=[],i,row=null;
@@ -1267,6 +1301,7 @@ body.night .google-month-day-detail { background:#102b39; }
     events=newEvents;
     el('agenda-message').innerHTML='Événement supprimé.';
     refreshEvents();
+    googleRender();
   };
   /* Météo internationale via Python : ES5 uniquement, Safari iOS 9. */
   var cityInfo=[
@@ -2108,6 +2143,43 @@ body.night .google-month-day-detail { background:#102b39; }
      Seul calendar.enc.json (SJCL AES-256-CCM) est téléchargé.
      La phrase secrète et les événements déchiffrés restent en RAM. */
   var googleKey=null,googleData=null,googleBusy=false,googleCachedAt=0;
+  var GOOGLE_VAULT_KEY='ipad_mural_google_vault_v39',googlePendingPass=null;
+  function googleVaultHint(msg) {
+    el('google-vault-status').innerHTML=escapeHtml(msg || (load(GOOGLE_VAULT_KEY)?
+      'Une clé chiffrée est enregistrée sur CET iPad. Saisis ta phrase locale pour la déverrouiller.' :
+      'Aucune clé chiffrée enregistrée sur cet iPad.'));
+  }
+  window.forgetSavedGoogleCalendar=function() {
+    if(!load(GOOGLE_VAULT_KEY)){googleVaultHint();return;}
+    if(!window.confirm('Effacer la clé Google chiffrée enregistrée sur cet iPad ? La clé dans Google Apps Script ne sera pas modifiée.'))return;
+    try{window.localStorage.removeItem(GOOGLE_VAULT_KEY);}catch(e){}
+    googleVaultHint('Clé mémorisée effacée sur cet iPad.');
+  };
+  window.unlockSavedGoogleCalendar=function() {
+    var saved=load(GOOGLE_VAULT_KEY),pass=el('google-local-pass').value,plain='';
+    if(!saved){googleVaultHint('Aucune clé enregistrée. Utilise d’abord ta clé Google habituelle.');return;}
+    if(!pass){googleVaultHint('Saisis ta phrase locale de déverrouillage.');return;}
+    if(typeof sjcl==='undefined'||!sjcl.decrypt){googleVaultHint('Chiffrement indisponible sur cet iPad.');return;}
+    try{
+      plain=sjcl.decrypt(pass,saved);
+      if(typeof plain!=='string'||plain.length<30||plain.length>512)throw Error('format');
+      googleKey=plain;el('google-local-pass').value='';googlePendingPass=null;
+      googleVaultHint('Clé déverrouillée pour cette session. Elle reste chiffrée dans Safari.');
+      googleFetch();
+    }catch(e){googleVaultHint('Phrase locale incorrecte ou clé chiffrée endommagée.');}
+    finally{if(typeof sjcl!=='undefined'&&sjcl.misc)sjcl.misc.pa={};}
+  };
+  function googleSaveVerifiedKey() {
+    if(!googlePendingPass)return '';
+    var pass=googlePendingPass,saved='';googlePendingPass=null;
+    try {
+      if(typeof sjcl==='undefined'||!sjcl.encrypt)throw Error('SJCL');
+      saved=sjcl.encrypt(pass,googleKey,{iter:10000,ks:256,ts:128,mode:'ccm'});
+      if(!store(GOOGLE_VAULT_KEY,saved))throw Error('stockage');
+      googleVaultHint('Clé chiffrée enregistrée sur cet iPad. Utilise ta phrase locale après rechargement.');
+      return ' Clé chiffrée sauvegardée sur cet iPad.';
+    }catch(e){googleVaultHint('Impossible de sauvegarder la clé localement. Tu pourras continuer à utiliser la clé Google.');return ' Sauvegarde de clé impossible.';}
+  }
   /* Affichage mensuel par défaut. Les rendez-vous déchiffrés restent en RAM. */
   var googleViewMode='month',googleViewYear=(new Date()).getFullYear();
   var googleViewMonth=(new Date()).getMonth(),googleSelectedDay='';
@@ -2165,6 +2237,41 @@ body.night .google-month-day-detail { background:#102b39; }
     }
     return found;
   }
+  /* Réunit les deux sources EN MEMOIRE. Aucune écriture dans Google. */
+  function unifiedEventsForDay(iso) {
+    var result=[],i,r,g=googleEventsForDay(iso),t,stamp,d;
+    for(i=0;i<events.length;i++) {
+      r=events[i];
+      if(r && r.date===iso && typeof r.title==='string')
+        result.push({kind:'local',row:r,title:r.title,sortTime:r.time||''});
+    }
+    for(i=0;i<g.length;i++) {
+      r=g[i];t='';
+      if(!r.all_day) {
+        stamp=parseSyncUtc(r.start_utc||'');
+        if(stamp!==null) {
+          d=new Date(stamp);
+          if(googleLocalIso(d)===iso)t=pad(d.getHours())+':'+pad(d.getMinutes());
+        }
+      }
+      result.push({kind:'remote',row:r,title:r.title,sortTime:t});
+    }
+    result.sort(function(a,b){
+      var x=a.sortTime||'',y=b.sortTime||'';
+      if(x!==y)return x<y?-1:1;
+      if(a.kind!==b.kind)return a.kind==='local'?-1:1;
+      return a.title<b.title?-1:(a.title>b.title?1:0);
+    });
+    return result;
+  }
+  function unifiedEventMarkup(item) {
+    var label=item.kind==='local'?'Sur cet iPad':'Google · lecture seule',desc='';
+    if(item.kind==='local') {
+      desc=prettyDate(item.row.date)+(item.row.time?' · '+item.row.time:' · Sans horaire');
+    } else desc=googleDate(item.row);
+    return '<div class="google-event '+item.kind+'"><span class="event-source">'+label+'</span>'+
+      '<strong>'+escapeHtml(item.title)+'</strong><span>'+escapeHtml(desc)+'</span></div>';
+  }
   function googleCoverage() {
     var obj=googleData||{},t=parseSyncUtc(obj.updated_at_utc||''),n=Number(obj.days);
     if(t===null||!(n>0&&n<=366))return null;
@@ -2180,71 +2287,80 @@ body.night .google-month-day-detail { background:#102b39; }
   }
   function googleRenderDay() {
     var node=el('google-calendar-day-detail'),iso=googleSelectedDay,covered=googleCoverage();
-    var a=googleEventsForDay(iso),out='<h3>'+escapeHtml(googleFormatDay(iso))+'</h3>',i;
-    if(!googleIsCovered(iso,covered)) {
-      out+='<div class="empty">Jour hors de la période synchronisée : absence de rendez-vous non garantie.</div>';
-    } else if(!a.length) {
-      out+='<div class="empty">Aucun rendez-vous signalé pour ce jour.</div>';
-    } else {
-      for(i=0;i<a.length;i++)out+=googleEventMarkup(a[i]);
-    }
+    var rows=unifiedEventsForDay(iso),out='<h3>'+escapeHtml(googleFormatDay(iso))+'</h3>',i;
+    if(!googleData) out+='<div class="agenda-help">Calendrier Google verrouillé : seuls les événements enregistrés sur cet iPad sont visibles.</div>';
+    else if(!googleIsCovered(iso,covered)) out+='<div class="agenda-help">Hors période Google : certains rendez-vous distants peuvent manquer. Les événements locaux restent affichés.</div>';
+    if(!rows.length)out+='<div class="empty">Aucun événement affiché pour cette journée.</div>';
+    else for(i=0;i<rows.length;i++)out+=unifiedEventMarkup(rows[i]);
     node.innerHTML=out;
   }
   function googleRenderMonth() {
-    if(!googleData)return;
     var title=el('google-month-title'),grid=el('google-calendar-month-grid'),foot=el('google-calendar-coverage');
     var cover=googleCoverage(),first=new Date(googleViewYear,googleViewMonth,1);
-    var offset=(first.getDay()+6)%7; /* lundi premier jour */
+    var offset=(first.getDay()+6)%7;
     var today=googleLocalIso(new Date()),weekdays=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
-    var out='<table class="google-month-table" role="grid" aria-label="Calendrier mensuel"><thead><tr>',i,w,date,iso,list,preview,classes;
+    var out='<table class="google-month-table" role="grid" aria-label="Calendrier familial mensuel"><thead><tr>',i,date,iso,rows,classes,j,peek;
     title.innerHTML=months[googleViewMonth].charAt(0).toUpperCase()+months[googleViewMonth].slice(1)+' '+googleViewYear;
     for(i=0;i<7;i++)out+='<th scope="col">'+weekdays[i]+'</th>';
     out+='</tr></thead><tbody>';
     for(i=0;i<42;i++) {
       if(i%7===0)out+='<tr>';
       date=new Date(googleViewYear,googleViewMonth,i-offset+1);
-      iso=googleLocalIso(date);list=googleEventsForDay(iso);
+      iso=googleLocalIso(date);rows=unifiedEventsForDay(iso);
       classes='google-date-cell';
       if(date.getMonth()!==googleViewMonth)classes+=' other-month';
-      if(!googleIsCovered(iso,cover))classes+=' not-covered';
+      if(googleData&&!googleIsCovered(iso,cover))classes+=' not-covered';
       if(iso===today)classes+=' today';
       if(iso===googleSelectedDay)classes+=' selected';
-      out+='<td><button type="button" class="'+classes+'" onclick="googleSelectDay(\''+iso+'\')" aria-label="'+escapeHtml(googleFormatDay(iso))+', '+list.length+' événement(s)">';
+      out+='<td><button type="button" class="'+classes+'" onclick="googleSelectDay(\''+iso+'\')" aria-label="'+escapeHtml(googleFormatDay(iso))+', '+rows.length+' événement(s)">';
       out+='<span class="gday">'+date.getDate()+'</span>';
-      if(list.length) {
-        out+='<span class="gevent-peek">'+escapeHtml(list[0].title)+'</span>';
-        if(list.length>1)out+='<span class="gcount">+'+(list.length-1)+' autre(s)</span>';
-      } else if(!googleIsCovered(iso,cover))out+='<span class="gcount">Hors période</span>';
+      for(j=0;j<rows.length&&j<2;j++) {
+        peek=rows[j].kind==='local'?'iPad · ':'Google · ';
+        out+='<span class="gevent-peek '+rows[j].kind+'">'+escapeHtml(peek+rows[j].title)+'</span>';
+      }
+      if(rows.length>2)out+='<span class="gcount">+'+(rows.length-2)+' autre(s)</span>';
+      if(!rows.length && googleData&&!googleIsCovered(iso,cover))out+='<span class="gcount">Google hors période</span>';
       out+='</button></td>';
       if(i%7===6)out+='</tr>';
     }
     out+='</tbody></table>';
     grid.innerHTML=out;
-    foot.innerHTML=cover ? 'Période couverte approximative : du '+escapeHtml(googleFormatDay(cover.first))+' au '+escapeHtml(googleFormatDay(cover.last))+'. Les jours grisés ne sont pas synchronisés ; ils ne sont pas nécessairement libres.' :
-      'Période de synchronisation inconnue : la grille ne permet pas de garantir les jours sans événement.';
-    if(googleData.truncated||googleData.skipped_recurring_rules)foot.innerHTML+=' Attention : certains événements peuvent manquer (limite de volume ou récurrences non prises en charge).';
+    foot.innerHTML=!googleData ? 'Événements locaux affichés. Déverrouille Google pour compléter ce mois avec les rendez-vous distants.' :
+      (cover ? 'Google synchronisé approximativement du '+escapeHtml(googleFormatDay(cover.first))+' au '+escapeHtml(googleFormatDay(cover.last))+'. Les jours grisés peuvent contenir des rendez-vous Google non récupérés.' :
+      'Période Google inconnue : l’absence de rendez-vous distant n’est pas garantie.');
+    if(googleData&&(googleData.truncated||googleData.skipped_recurring_rules))
+      foot.innerHTML+=' Attention : certains rendez-vous Google peuvent manquer (limite ou répétitions non interprétées).';
     googleRenderDay();
   }
   function googleRender() {
     var list=el('google-calendar-events'),controls=el('google-calendar-view-controls');
-    var monthPanel=el('google-calendar-month-view'),arr=googleData&&googleData.events,out='',i,row,count=0;
-    if(!arr){
-      controls.style.display='none';list.style.display='block';
-      list.innerHTML='<div class="empty">Calendrier verrouillé.</div>';return;
-    }
+    var monthPanel=el('google-calendar-month-view'),arr=[],out='',i,r,b,stamp,d;
     controls.style.display='block';
     el('google-view-month-btn').className='secondary'+(googleViewMode==='month'?' selected':'');
     el('google-view-list-btn').className='secondary'+(googleViewMode==='list'?' selected':'');
     monthPanel.style.display=googleViewMode==='month'?'block':'none';
     list.style.display=googleViewMode==='list'?'block':'none';
     if(googleViewMode==='month'){googleRenderMonth();return;}
-    if(!arr.length){list.innerHTML='<div class="empty">Aucun rendez-vous disponible pour la période.</div>';return;}
-    for(i=0;i<arr.length && count<180;i++){
-      row=arr[i];
-      if(!row || typeof row.title!=='string' || row.title.length>250 || !parseSyncUtc(row.start_utc))continue;
-      out+=googleEventMarkup(row);count++;
+    for(i=0;i<events.length;i++){
+      r=events[i];
+      if(r && googleDateFromIso(r.date) && typeof r.title==='string')
+        arr.push({kind:'local',row:r,title:r.title,date:r.date,time:r.time||''});
     }
-    list.innerHTML=out || '<div class="empty">Aucun rendez-vous valide.</div>';
+    if(googleData&&googleData.events)for(i=0;i<googleData.events.length;i++){
+      r=googleData.events[i];b=googleEventBounds(r);
+      if(!b)continue;
+      stamp=parseSyncUtc(r.start_utc||'');d=new Date(stamp);
+      arr.push({kind:'remote',row:r,title:r.title,date:b.first,time:r.all_day?'':pad(d.getHours())+':'+pad(d.getMinutes())});
+    }
+    arr.sort(function(a,b){
+      if(a.date!==b.date)return a.date<b.date?-1:1;
+      if(a.time!==b.time)return a.time<b.time?-1:1;
+      return a.kind==='local'?-1:1;
+    });
+    if(!arr.length){list.innerHTML='<div class="empty">Aucun événement affiché.</div>';return;}
+    if(!googleData)out='<div class="agenda-help">Calendrier Google verrouillé : liste locale seulement.</div>';
+    for(i=0;i<arr.length&&i<430;i++)out+=unifiedEventMarkup(arr[i]);
+    list.innerHTML=out;
   }
   window.googleSetView=function(view) {
     if(view!=='month'&&view!=='list')return;
@@ -2260,7 +2376,7 @@ body.night .google-month-day-detail { background:#102b39; }
     googleRenderMonth();
   };
   window.googleChangeMonth=function(delta) {
-    if(!googleData||delta!==-1&&delta!==1)return;
+    if(delta!==-1&&delta!==1)return;
     var d=new Date(googleViewYear,googleViewMonth+delta,1);
     googleViewYear=d.getFullYear();googleViewMonth=d.getMonth();
     googleSelectedDay=googleLocalIso(d);
@@ -2271,10 +2387,11 @@ body.night .google-month-day-detail { background:#102b39; }
     googleSelectedDay=googleLocalIso(d);googleRenderMonth();
   };
   window.lockGoogleCalendar=function(){
-    googleKey=null;googleData=null;googleCachedAt=0;
-    el('google-calendar-key').value='';
+    googleKey=null;googleData=null;googleCachedAt=0;googlePendingPass=null;
+    el('google-calendar-key').value='';el('google-local-pass').value='';
+    el('google-remember-key').checked=false;
     if(typeof sjcl!=='undefined' && sjcl.misc)sjcl.misc.pa={};
-    googleStatus('Calendrier verrouillé.');googleRender();
+    googleStatus('Google verrouillé : seuls les rendez-vous locaux sont visibles.');googleRender();
   };
   function googleFetch() {
     if(googleBusy || !googleKey)return;
@@ -2296,8 +2413,9 @@ body.night .google-month-day-detail { background:#102b39; }
           if(stamp!==null){msg+=' Synchronisé : '+localSyncTime(stamp)+'.';if((new Date()).getTime()-stamp>3*3600000)msg+=' Attention : copie ancienne.';}
           if(obj.truncated)msg+=' Liste tronquée.';
           if(obj.skipped_recurring_rules)msg+=' Attention : '+obj.skipped_recurring_rules+' série(s) récurrente(s) non interprétée(s).';
+          msg+=googleSaveVerifiedKey();
           googleStatus(msg);
-        }catch(e){googleStatus('Clé incorrecte, copie invalide ou fichier non déchiffrable.');}
+        }catch(e){googlePendingPass=null;googleStatus('Clé incorrecte, copie invalide ou fichier non déchiffrable.');}
         finally {if(typeof sjcl!=='undefined' && sjcl.misc)sjcl.misc.pa={};}
       },50);
     }
@@ -2314,8 +2432,12 @@ body.night .google-month-day-detail { background:#102b39; }
   }
   window.unlockGoogleCalendar=function(){
     var typed=el('google-calendar-key').value;
-    if(!typed || typed.length<30){googleStatus('Saisis ta clé secrète de 30 caractères minimum.');return;}
-    googleKey=typed;el('google-calendar-key').value='';
+    var remember=el('google-remember-key').checked,pass=el('google-local-pass').value;
+    if(!typed || typed.length<30){googleStatus('Saisis ta clé secrète Google de 30 caractères minimum.');return;}
+    if(remember && pass.length<14){googleStatus('Pour mémoriser la clé, choisis une phrase locale forte d’au moins 14 caractères.');return;}
+    googlePendingPass=remember?pass:null;
+    googleKey=typed;el('google-calendar-key').value='';el('google-local-pass').value='';
+    el('google-remember-key').checked=false;
     googleFetch();
   };
   window.refreshGoogleCalendar=function(){
@@ -2326,6 +2448,9 @@ body.night .google-month-day-detail { background:#102b39; }
     if(googleKey && el('page-agenda').className.indexOf('active')!==-1)googleFetch();
   },900000);
 
+  googleVaultHint();
+  googleSelectedDay=googleLocalIso(new Date());
+  googleRender(); /* calendrier local visible immédiatement, avant déchiffrement */
   updateFreshIndicators();
   loadBringStatus();
   loadWeather();
