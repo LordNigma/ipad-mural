@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
-<title>Maison - iPad Mural V3.8</title>
+<title>Maison - iPad Mural V3.9.1</title>
 <style>
 /* CSS volontairement simple : Safari iOS 9, sans frameworks ni polices externes. */
 * { -webkit-box-sizing:border-box; box-sizing:border-box; }
@@ -449,12 +449,37 @@ body.night .google-event.local { background:#302e29; }
  .google-month-table { border-spacing:2px; }
 }
 @media (max-width:420px) { .google-date-cell .gevent-peek { display:none; } }
+
+/* V3.9.1 — Alerte batterie MANUELLE : Safari iOS 9 ne lit pas la charge. */
+.battery-tools { overflow:hidden; margin:0 0 13px; padding:5px 2px; }
+.battery-tools button { min-height:37px; border-radius:8px; padding:7px 13px;
+  font-size:13px; color:#f5e6e6; border:1px solid #925d5d; background:#442a31; }
+.battery-tools button.battery-clear { color:#f4fafc; background:#284c40; border-color:#568975; }
+.battery-tools .battery-hint { font-size:12px; color:#a8becb; margin-left:11px; line-height:1.5; }
+#battery-alert { display:none; position:fixed; left:0; top:0; width:100%;
+  z-index:11000; padding:11px 16px; text-align:center; background:#a71d27;
+  color:#fff; border-bottom:2px solid #e46a70; font-size:17px;
+  font-weight:bold; line-height:1.3; -webkit-box-sizing:border-box; box-sizing:border-box;
+  pointer-events:none; }
+body.manual-low-battery { padding-top:79px; }
+body.manual-low-battery #battery-alert { display:block; }
+body.frame-mode.manual-low-battery { padding:0; }
+@media (max-width:700px) {
+  #battery-alert { font-size:14px; padding:10px 10px; }
+  body.manual-low-battery { padding-top:67px; }
+  .battery-tools .battery-hint { display:block; margin:5px 0 0; }
+}
 </style>
 </head>
 <body>
+<div id="battery-alert" role="alert" aria-live="assertive">&#9888; BATTERIE FAIBLE (environ 10 %) — Pense à recharger l’iPad · Alerte manuelle</div>
 <div class="topbar">
   <div class="logo">MAISON / TABLEAU DE BORD</div>
   <div class="connection"><strong>●</strong> GitHub Pages · données locales</div>
+</div>
+<div class="battery-tools">
+  <button id="battery-toggle" type="button" onclick="toggleManualBattery()">Signaler batterie à environ 10 %</button>
+  <span class="battery-hint">Indication manuelle : Safari 9 ne peut pas mesurer la charge.</span>
 </div>
 <div class="nav portal-back" id="detail-nav" style="display:none">
   <button id="nav-return" type="button" onclick="showPage('home')">&#8592; Accueil</button>
@@ -593,46 +618,12 @@ body.night .google-event.local { background:#302e29; }
     </div>
     <button type="button" class="secondary idle-test" onclick="previewIdle()">Tester la veille maintenant</button>
     <p class="muted small" id="idle-settings-status">Par défaut : diaporama après 5 minutes. Sans photo disponible, l’horloge prend le relais.</p>
-    <p class="muted small">La veille visuelle ne remplace pas le verrouillage de l’iPad et ne désactive pas sa mise en veille matérielle. Pour l'affichage continu, vérifie les réglages iOS et la batterie.</p>
+    <p class="muted small">La veille visuelle ne remplace pas le verrouillage de l’iPad. Le bandeau rouge de batterie faible est manuel : active-le ou désactive-le à l’aide du bouton en haut de la page.</p>
   </div>
 </div>
 <div class="page" id="page-agenda">
-  <div class="panel">
-    <h1>Agenda familial</h1>
-    <p>Ajoute un rendez-vous ou une activité familiale. L'heure est facultative. Les événements restent sur cet iPad. Fais une copie manuelle dans « Notes » pour les conserver.</p>
-    <div class="field"><label for="event-title">Événement</label><input id="event-title" type="text" maxlength="100" placeholder="Ex. Rendez-vous, anniversaire"></div>
-    <div class="field">
-      <label for="event-date">Date (JJ/MM/AAAA)</label><input id="event-date" type="text" maxlength="10" placeholder="Ex. 25/11/2026">
-      <div class="agenda-quick"><button class="secondary smallbtn" type="button" onclick="setEventDate('today')">Aujourd'hui</button><button class="secondary smallbtn" type="button" onclick="setEventDate('tomorrow')">Demain</button></div>
-    </div>
-    <div class="field"><label for="event-time">Heure facultative (HH:MM)</label><input id="event-time" type="text" maxlength="5" placeholder="Ex. 14:30"><div class="agenda-help">Laisse vide pour un événement sans heure précise.</div></div>
-    <button class="primary" type="button" onclick="addEvent()">Ajouter l'événement</button>
-    <div class="message" id="agenda-message" aria-live="polite"></div>
-  </div>
-  <div class="panel"><h2>Planning familial</h2><div id="events-list" class="empty">Aucun événement enregistré.</div><p class="agenda-help">Les événements anciens restent disponibles jusqu'à leur suppression. La suppression demande confirmation.</p></div>
-
   <div class="panel" id="google-calendar-panel">
-    <h2 class="google-title">Calendrier familial unifié · iPad + Google</h2>
-    <p>Vue mensuelle commune : tes événements créés sur l'iPad et ceux de ton unique calendrier Google partagé. Les événements Google restent en lecture seule. Aucun mot de passe Google ni lien iCal secret sur l'iPad ou GitHub.</p>
-    <div class="field"><label for="google-calendar-key">Clé de consultation du calendrier (différente de Bring!)</label>
-      <input id="google-calendar-key" type="password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Clé définie dans Google Apps Script"></div>
-    <div class="google-buttons">
-      <button type="button" class="primary" onclick="unlockGoogleCalendar()">Afficher le calendrier</button>
-      <button type="button" class="secondary" onclick="refreshGoogleCalendar()">Actualiser</button>
-      <button type="button" class="secondary" onclick="lockGoogleCalendar()">Verrouiller</button>
-    </div>
-    <div class="google-vault">
-      <label><input type="checkbox" id="google-remember-key"> Conserver ma clé Google sous forme chiffrée sur cet iPad</label>
-      <p>Facultatif. Pour éviter de retaper la longue clé, définis une <strong>phrase locale forte d'au moins 14 caractères</strong>. Elle sera nécessaire après chaque rechargement. Ne réutilise pas une phrase existante.</p>
-      <div class="field"><label for="google-local-pass">Phrase locale de déverrouillage (14 caractères minimum)</label>
-        <input id="google-local-pass" type="password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Phrase locale distincte de la clé Google"></div>
-      <div class="google-buttons">
-        <button type="button" class="secondary" onclick="unlockSavedGoogleCalendar()">Déverrouiller avec la phrase locale</button>
-        <button type="button" class="secondary" onclick="forgetSavedGoogleCalendar()">Effacer la clé mémorisée</button>
-      </div>
-      <p id="google-vault-status">Aucune clé enregistrée sur cet iPad.</p>
-    </div>
-    <div class="google-status" id="google-calendar-status" aria-live="polite">La vue mensuelle affiche déjà tes événements locaux. Pour ajouter Google, saisis la clé de consultation ou utilise ta phrase locale si une clé chiffrée a été enregistrée.</div>
+    <h1>Agenda familial · Calendrier mensuel</h1>
     <div id="google-calendar-view-controls">
       <div class="google-legend"><span class="legend-part"><i class="google-dot local"></i> Sur cet iPad</span><span class="legend-part"><i class="google-dot remote"></i> Google (lecture seule)</span></div>
       <div class="google-view-switch">
@@ -654,6 +645,44 @@ body.night .google-event.local { background:#302e29; }
       </div>
     </div>
     <div id="google-calendar-events" class="empty">Tes événements locaux apparaissent même lorsque Google est verrouillé.</div>
+    <div class="google-status" id="google-calendar-status" aria-live="polite">La vue mensuelle affiche déjà tes événements locaux. Pour ajouter Google, saisis la clé de consultation ou utilise ta phrase locale si une clé chiffrée a été enregistrée.</div>
+    <p class="agenda-help">Jaune : événements créés sur cet iPad. Bleu : calendrier Google partagé (lecture seule). Si Google est verrouillé, tes événements locaux restent visibles.</p>
+  </div>
+  <div class="panel">
+    <h2>Ajouter un rendez-vous sur cet iPad</h2>
+    <p>Ajoute un rendez-vous ou une activité familiale. L'heure est facultative. Les événements restent sur cet iPad. Fais une copie manuelle dans « Notes » pour les conserver.</p>
+    <div class="field"><label for="event-title">Événement</label><input id="event-title" type="text" maxlength="100" placeholder="Ex. Rendez-vous, anniversaire"></div>
+    <div class="field">
+      <label for="event-date">Date (JJ/MM/AAAA)</label><input id="event-date" type="text" maxlength="10" placeholder="Ex. 25/11/2026">
+      <div class="agenda-quick"><button class="secondary smallbtn" type="button" onclick="setEventDate('today')">Aujourd'hui</button><button class="secondary smallbtn" type="button" onclick="setEventDate('tomorrow')">Demain</button></div>
+    </div>
+    <div class="field"><label for="event-time">Heure facultative (HH:MM)</label><input id="event-time" type="text" maxlength="5" placeholder="Ex. 14:30"><div class="agenda-help">Laisse vide pour un événement sans heure précise.</div></div>
+    <button class="primary" type="button" onclick="addEvent()">Ajouter l'événement</button>
+    <div class="message" id="agenda-message" aria-live="polite"></div>
+  </div>
+  <div class="panel"><h2>Planning familial</h2><div id="events-list" class="empty">Aucun événement enregistré.</div><p class="agenda-help">Les événements anciens restent disponibles jusqu'à leur suppression. La suppression demande confirmation.</p></div>
+
+  <div class="panel" id="google-calendar-access">
+    <h2>Accès au calendrier Google</h2>
+    <p class="agenda-help">Déverrouille uniquement pour voir les rendez-vous de ton calendrier Google partagé. La clé n'est jamais enregistrée en clair dans GitHub.</p>
+    <div class="field"><label for="google-calendar-key">Clé de consultation du calendrier (différente de Bring!)</label>
+      <input id="google-calendar-key" type="password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Clé définie dans Google Apps Script"></div>
+    <div class="google-buttons">
+      <button type="button" class="primary" onclick="unlockGoogleCalendar()">Afficher le calendrier</button>
+      <button type="button" class="secondary" onclick="refreshGoogleCalendar()">Actualiser</button>
+      <button type="button" class="secondary" onclick="lockGoogleCalendar()">Verrouiller</button>
+    </div>
+    <div class="google-vault">
+      <label><input type="checkbox" id="google-remember-key"> Conserver ma clé Google sous forme chiffrée sur cet iPad</label>
+      <p>Facultatif. Pour éviter de retaper la longue clé, définis une <strong>phrase locale forte d'au moins 14 caractères</strong>. Elle sera nécessaire après chaque rechargement. Ne réutilise pas une phrase existante.</p>
+      <div class="field"><label for="google-local-pass">Phrase locale de déverrouillage (14 caractères minimum)</label>
+        <input id="google-local-pass" type="password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Phrase locale distincte de la clé Google"></div>
+      <div class="google-buttons">
+        <button type="button" class="secondary" onclick="unlockSavedGoogleCalendar()">Déverrouiller avec la phrase locale</button>
+        <button type="button" class="secondary" onclick="forgetSavedGoogleCalendar()">Effacer la clé mémorisée</button>
+      </div>
+      <p id="google-vault-status">Aucune clé enregistrée sur cet iPad.</p>
+    </div>
   </div>
 </div>
 <div class="page" id="page-notes">
@@ -833,7 +862,7 @@ body.night .google-event.local { background:#302e29; }
     <div class="idle-wake">Toucher pour revenir</div>
   </div>
 </div>
-<div class="footer">Tableau de bord V3.8 · Safari iOS 9 · météo, Bring! et actualités via GitHub</div>
+<div class="footer">Tableau de bord V3.9.1 · Safari iOS 9 · météo, Bring! et actualités via GitHub</div>
 <script src="sjcl.js"></script>
 <script>
 /* JavaScript ES5 : compatible avec Safari 9. */
@@ -950,6 +979,24 @@ body.night .google-event.local { background:#302e29; }
   function todayIso() { var d=new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
   function store(key,value) { try { window.localStorage.setItem(key,value); return true; } catch(e) { return false; } }
   function load(key) { try { return window.localStorage.getItem(key); } catch(e) { return null; } }
+  /* L'utilisateur active ou retire l'avertissement : aucune prétention de détection automatique. */
+  var manualBatteryLow = load('ipad_mural_low_battery_manual_v391')==='1';
+  function showManualBatteryState() {
+    var cls=document.body.className || '';
+    cls=cls.replace(/\bmanual-low-battery\b/g,'').replace(/\s+/g,' ');
+    document.body.className=(cls+(manualBatteryLow?' manual-low-battery':'')).replace(/^\s+|\s+$/g,'');
+    el('battery-toggle').innerHTML=manualBatteryLow?'Batterie rechargée · Retirer l’alerte':'Signaler batterie à environ 10 %';
+    el('battery-toggle').className=manualBatteryLow?'battery-clear':'';
+  }
+  window.toggleManualBattery=function() {
+    var next=!manualBatteryLow;
+    if(!store('ipad_mural_low_battery_manual_v391',next?'1':'0')) {
+      window.alert('Stockage de Safari indisponible : ce réglage risque de ne pas être conservé.');
+    }
+    manualBatteryLow=next;
+    showManualBatteryState();
+  };
+  showManualBatteryState();
   function updateClock() {
     var d=new Date();
     el('clock').innerHTML=pad(d.getHours())+':'+pad(d.getMinutes());
@@ -1908,7 +1955,7 @@ body.night .google-event.local { background:#302e29; }
   function updateDisplayMode() {
     var hour=(new Date()).getHours();
     var dark=(displayMode==='night' || (displayMode==='auto' && (hour>=21 || hour<7)));
-    document.body.className=(dark?'night':'')+(photoFrameActive?' frame-mode':'');
+    document.body.className=(dark?'night':'')+(photoFrameActive?' frame-mode':'')+(manualBatteryLow?' manual-low-battery':'');
     el('display-mode').innerHTML=(displayMode==='auto'?'Affichage : Auto (21h–7h)':(displayMode==='day'?'Affichage : Jour':'Affichage : Nuit'));
     el('display-mode').setAttribute('aria-pressed',dark?'true':'false');
   }
