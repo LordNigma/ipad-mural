@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
-<title>Maison - iPad Mural V3.4</title>
+<title>Maison - iPad Mural V3.5</title>
 <style>
 /* CSS volontairement simple : Safari iOS 9, sans frameworks ni polices externes. */
 * { -webkit-box-sizing:border-box; box-sizing:border-box; }
@@ -308,6 +308,40 @@ body.night .portal-weather-side { background:#142833; }
 }
 @media(max-width:700px) { .portal-clock { font-size:64px; } .portal-clock-side { width:51%; } .portal-weather-side { width:48%; min-height:150px; } .portal-card { height:119px; padding:12px; } .portal-name { font-size:18px; } .portal-desc { font-size:13px; } .portal-weather-temp { font-size:29px; } }
 @media(max-width:420px) { .portal-hero { padding:11px; } .portal-clock { font-size:47px; } .portal-date { font-size:14px; } .portal-weather-side { min-height:138px; } .portal-card { height:113px; padding:10px; } .portal-name { font-size:16px; } .portal-desc { font-size:12px; } }
+/* V3.5 — message important sur la veille ; CSS simple pour Safari iOS 9. */
+.note-important-choice { display:block; margin:12px 0 13px; padding:14px 15px;
+  background:#253d49; border:1px solid #678596; border-radius:9px; color:#eff5f8; font-size:17px; }
+.note-important-choice input { display:inline-block; width:22px; height:22px;
+  vertical-align:middle; margin:0 9px 2px 0; }
+.note-important-help { font-size:13px; color:#b7ccd7; margin-top:6px; line-height:1.45; }
+.note-important-status { font-size:14px; color:#f3ce86; margin:9px 0 5px; }
+body.night .note-important-choice { background:#142833; border-color:#4c6b79; }
+.idle-important-layer { position:absolute; left:0; top:0; width:100%; height:100%;
+  display:none; background:#070b10; text-align:center; overflow:hidden; }
+.idle-important-wrap { position:absolute; left:4%; top:50%; width:92%;
+  -webkit-transform:translateY(-50%); transform:translateY(-50%); }
+.idle-important-label { display:block; color:#ffdb85; font-weight:bold;
+  font-size:25px; letter-spacing:.13em; margin-bottom:22px; }
+.idle-important-message { display:block; max-height:490px; overflow:hidden;
+  color:#f3f6f8; white-space:pre-wrap; word-wrap:break-word;
+  line-height:1.34; font-size:34px; font-weight:bold; }
+.idle-important-message.medium { font-size:29px; line-height:1.35; }
+.idle-important-message.long { font-size:24px; line-height:1.35; }
+.idle-important-sub { display:block; color:#9eb4c3; font-size:15px; margin-top:22px; }
+@media (max-width:700px) {
+ .idle-important-label { font-size:20px; margin-bottom:15px; }
+ .idle-important-message { font-size:29px; max-height:620px; }
+ .idle-important-message.medium { font-size:25px; }
+ .idle-important-message.long { font-size:21px; }
+ .idle-important-sub { font-size:13px; }
+}
+@media (max-height:600px) {
+ .idle-important-label { font-size:19px; margin-bottom:10px; }
+ .idle-important-message { font-size:27px; max-height:340px; }
+ .idle-important-message.medium { font-size:23px; }
+ .idle-important-message.long { font-size:18px; }
+ .idle-important-sub { margin-top:12px; }
+}
 </style>
 </head>
 <body>
@@ -345,7 +379,7 @@ body.night .portal-weather-side { background:#142833; }
     </div>
     <div class="portal-row">
       <div class="portal-item"><button type="button" class="portal-card" onclick="showPage('agenda')"><span class="portal-symbol">▤</span><span class="portal-name">Agenda</span><span class="portal-desc">Événements familiaux</span></button></div>
-      <div class="portal-item"><button type="button" class="portal-card" onclick="showPage('notes')"><span class="portal-symbol">✎</span><span class="portal-name">Notes</span><span class="portal-desc">Mémos et sauvegardes</span></button></div>
+      <div class="portal-item"><button type="button" class="portal-card" onclick="showPage('notes')"><span class="portal-symbol">✎</span><span class="portal-name">Notes</span><span class="portal-desc" id="portal-notes-desc">Mémos et sauvegardes</span></button></div>
     </div>
     <div class="portal-row">
       <div class="portal-item"><button type="button" class="portal-card" onclick="showPage('courses')"><span class="portal-symbol">✓</span><span class="portal-name">Courses</span><span class="portal-desc">Liste Bring! en lecture seule</span></button></div>
@@ -475,8 +509,13 @@ body.night .portal-weather-side { background:#142833; }
     <h1>Notes de la maison</h1>
     <p>Un mémo simple pour la famille (courses, rappel, message). Il est enregistré uniquement sur cet iPad. Une sauvegarde manuelle peut être copiée via le panneau ci-dessous.</p>
     <div class="field"><label for="notes-input">Votre note</label><textarea id="notes-input" placeholder="Écrivez ici…"></textarea></div>
-    <button class="primary" type="button" onclick="saveNotes()">Enregistrer la note</button>
-    <div class="message" id="notes-message"></div>
+    <label class="note-important-choice" for="note-important">
+      <input id="note-important" type="checkbox"> ★ Afficher comme message important sur la veille
+    </label>
+    <div class="note-important-help">Si cette case est cochée, cette note remplace l'horloge ou le diaporama lorsque la veille démarre. Jusqu'à 450 caractères pour garantir une lecture confortable. Décoche la case et enregistre pour revenir à la veille habituelle.</div>
+    <button class="primary" type="button" onclick="saveNotes()">Enregistrer la note et la priorité</button>
+    <div id="note-important-current" class="note-important-status" aria-live="polite"></div>
+    <div class="message" id="notes-message" aria-live="polite"></div>
   </div>
   <div class="panel">
     <h2>Sauvegarde et transfert privés</h2>
@@ -610,10 +649,17 @@ body.night .portal-weather-side { background:#142833; }
       <img id="idle-photo-image" alt="Photo de paysage" onload="idlePhotoLoaded()" onerror="idlePhotoError()">
       <div class="idle-photo-time" id="idle-photo-time">--:--</div>
     </div>
+    <div id="idle-important-layer" class="idle-important-layer" style="display:none">
+      <div class="idle-important-wrap">
+        <span class="idle-important-label">★ MESSAGE IMPORTANT</span>
+        <span id="idle-important-message" class="idle-important-message"></span>
+        <span class="idle-important-sub">Note enregistrée sur cet iPad</span>
+      </div>
+    </div>
     <div class="idle-wake">Toucher pour revenir</div>
   </div>
 </div>
-<div class="footer">Tableau de bord V3.3 · Safari iOS 9 · météo, Bring! et actualités via GitHub</div>
+<div class="footer">Tableau de bord V3.5 · Safari iOS 9 · météo, Bring! et actualités via GitHub</div>
 <script src="sjcl.js"></script>
 <script>
 /* JavaScript ES5 : compatible avec Safari 9. */
@@ -811,9 +857,19 @@ body.night .portal-weather-side { background:#142833; }
     }
     el('events-list').innerHTML=out;
   }
+  var IMPORTANT_NOTE_KEY='ipad_mural_note_important_v35';
+  function importantSavedText() {
+    var t=load('ipad_mural_notes_v2')||'';
+    if(load(IMPORTANT_NOTE_KEY)!=='1' || !t.replace(/^\s+|\s+$/g,'')) return '';
+    if(t.length>450) return ''; // Évite une note longue qui cacherait le message.
+    return t;
+  }
   function refreshNotePreview() {
     var t=el('notes-input').value;
-    el('notes-preview').innerHTML=t ? escapeHtml(t.substring(0,95)) : 'Touchez « Notes » pour écrire un mémo.';
+    var savedImportant=!!importantSavedText();
+    el('notes-preview').innerHTML=(savedImportant?'★ Important · ':'')+(t ? escapeHtml(t.substring(0,95)) : 'Touchez « Notes » pour écrire un mémo.');
+    el('note-important-current').innerHTML=savedImportant?'★ Message important actif pour la prochaine veille.':'Aucun message prioritaire actif.';
+    el('portal-notes-desc').innerHTML=savedImportant?'★ Message important actif':'Mémos et sauvegardes';
   }
   window.showPage=function(name) {
     var ids=['home','general','agenda','notes','cameras','weather','photos','courses','actualites'],i,active;
@@ -1101,11 +1157,12 @@ body.night .portal-weather-side { background:#142833; }
   /* V3.1 : transfert local via copier/coller, sans serveur ni téléversement de données privées. */
   function backupMessage(message) { el('backup-message').innerHTML=escapeHtml(message); }
   var prefKeys=['ipad_mural_main_city_v27','ipad_mural_display_mode_v24',
-    'ipad_mural_idle_mode_v29','ipad_mural_idle_delay_v29','ipad_mural_photo_delay_v28'];
+    'ipad_mural_idle_mode_v29','ipad_mural_idle_delay_v29','ipad_mural_photo_delay_v28',IMPORTANT_NOTE_KEY];
   window.showBackupCopy=function() {
     var savedNote=load('ipad_mural_notes_v2')||'',p={},i;
-    if(el('notes-input').value!==savedNote) {
-      backupMessage('Enregistre d’abord la note avec « Enregistrer la note ».'); return;
+    if(el('notes-input').value!==savedNote ||
+       el('note-important').checked !== (load(IMPORTANT_NOTE_KEY)==='1')) {
+      backupMessage('Enregistre d’abord la note et sa priorité avant de faire une copie.'); return;
     }
     for(i=0;i<prefKeys.length;i++) p[prefKeys[i]]=load(prefKeys[i]);
     var b={schema:2,notes:savedNote,events:events,preferences:p};
@@ -1133,10 +1190,10 @@ body.night .portal-weather-side { background:#142833; }
     if(!window.confirm('Importer '+b.events.length+' événement(s) et la note ? Cela remplacera les données actuelles de cet iPad.')) {
       backupMessage('Importation annulée.'); return;
     }
-    keys=['ipad_mural_notes_v2','ipad_mural_events_v2'];
+    keys=['ipad_mural_notes_v2','ipad_mural_events_v2',IMPORTANT_NOTE_KEY];
     if(b.schema===2 && b.preferences) {
       for(i=0;i<prefKeys.length;i++) {
-        if(typeof b.preferences[prefKeys[i]]==='string') keys.push(prefKeys[i]);
+        if(prefKeys[i]!==IMPORTANT_NOTE_KEY && typeof b.preferences[prefKeys[i]]==='string') keys.push(prefKeys[i]);
       }
     }
     for(i=0;i<keys.length;i++) backup[keys[i]]=load(keys[i]);
@@ -1144,10 +1201,16 @@ body.night .portal-weather-side { background:#142833; }
       store('ipad_mural_events_v2',JSON.stringify(b.events));
     if(success && b.schema===2 && b.preferences) {
       for(i=0;i<prefKeys.length;i++) {
-        if(typeof b.preferences[prefKeys[i]]==='string') {
+        if(prefKeys[i]!==IMPORTANT_NOTE_KEY && typeof b.preferences[prefKeys[i]]==='string') {
           if(!store(prefKeys[i],b.preferences[prefKeys[i]])) success=false;
         }
       }
+    }
+    /* Les anciennes copies sans indicateur réinitialisent la priorité : pas de fausse alerte. */
+    if(success) {
+      var copyPriority=(b.schema===2 && b.preferences && b.preferences[IMPORTANT_NOTE_KEY]==='1' &&
+        !!b.notes.replace(/^\s+|\s+$/g,'') && b.notes.length<=450)?'1':'0';
+      if(!store(IMPORTANT_NOTE_KEY,copyPriority)) success=false;
     }
     if(!success) {
       for(i=0;i<keys.length;i++) {
@@ -1349,6 +1412,17 @@ body.night .portal-weather-side { background:#142833; }
   }
   function idleSelectVisual() {
     idleStopPhotoTimer();
+    var important=importantSavedText(),layer=el('idle-important-layer');
+    if(important) {
+      el('idle-clock-layer').style.display='none';
+      el('idle-photo-layer').style.display='none';
+      var msg=el('idle-important-message');
+      msg.textContent=important;
+      msg.className='idle-important-message'+(important.length>280?' long':(important.length>120?' medium':''));
+      layer.style.display='block';
+      return;
+    }
+    layer.style.display='none';
     if(idleMode==='photos' && photoList.length) {
       el('idle-clock-layer').style.display='none';
       el('idle-photo-layer').style.display='block';
@@ -1373,6 +1447,7 @@ body.night .portal-weather-side { background:#142833; }
     idleActive=false;
     idleStopPhotoTimer();
     el('idle-overlay').style.display='none';
+    el('idle-important-layer').style.display='none';
     el('idle-photo-image').style.display='none';
     el('idle-photo-image').removeAttribute('src');
     idleLastActivity=(new Date()).getTime();
@@ -1403,7 +1478,8 @@ body.night .portal-weather-side { background:#142833; }
   function idleSettingsLabel() {
     var name=idleMode==='photos'?'Diaporama':(idleMode==='clock'?'Horloge':'Désactivée');
     el('idle-settings-status').innerHTML='Mode : '+name+'. Délai : '+(idleDelay/60000)+' min.'+
-     (idleMode==='photos'?' Sans photo, l’horloge s’affiche automatiquement.':'');
+     (idleMode==='photos'?' Sans photo, l’horloge s’affiche automatiquement.':'')+
+     ' Une note importante enregistrée est prioritaire pendant la veille.';
   }
   window.changeIdlePreferences=function() {
     var m=el('idle-mode-choice').value;
@@ -1456,12 +1532,29 @@ body.night .portal-weather-side { background:#142833; }
   updateDisplayMode();
   window.setInterval(updateDisplayMode,60000);
   window.saveNotes=function() {
-    if(store('ipad_mural_notes_v2',el('notes-input').value)) el('notes-message').innerHTML='Note enregistrée sur cet appareil.';
-    else el('notes-message').innerHTML='Impossible de sauvegarder : stockage local indisponible.';
+    var note=el('notes-input').value,checked=el('note-important').checked;
+    if(checked && !note.replace(/^\s+|\s+$/g,'')) {
+      el('notes-message').innerHTML='Écris une note avant de la marquer comme importante.'; return;
+    }
+    if(checked && note.length>450) {
+      el('notes-message').innerHTML='Pour l’écran de veille, réduis le message important à 450 caractères maximum ou décoche la priorité.'; return;
+    }
+    var previous=load('ipad_mural_notes_v2');
+    if(!store('ipad_mural_notes_v2',note)) {
+      el('notes-message').innerHTML='Impossible de sauvegarder : stockage local indisponible.';return;
+    }
+    if(!store(IMPORTANT_NOTE_KEY,checked?'1':'0')) {
+      if(previous!==null) store('ipad_mural_notes_v2',previous);
+      else try{window.localStorage.removeItem('ipad_mural_notes_v2');}catch(e){}
+      el('notes-message').innerHTML='Impossible de conserver la priorité : aucune modification validée.';
+      return;
+    }
+    el('notes-message').innerHTML=checked?'Message important enregistré. Il sera affiché pendant la veille.':'Note enregistrée. Veille habituelle rétablie.';
     refreshNotePreview();
   };
   try { var saved=load('ipad_mural_events_v2'); if(saved) { var temp=JSON.parse(saved); if(Object.prototype.toString.call(temp)==='[object Array]') events=temp; } } catch(e) { events=[]; }
   el('notes-input').value=load('ipad_mural_notes_v2')||'';
+  el('note-important').checked=!!importantSavedText();
   refreshNotePreview(); refreshEvents(); updateClock(); window.setEventDate('today');
   window.setInterval(updateClock,10000);
   window.setInterval(refreshEvents,60000);
