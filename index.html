@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
-<title>Maison - iPad Mural V3.6</title>
+<title>Maison - iPad Mural V3.7</title>
 <style>
 /* CSS volontairement simple : Safari iOS 9, sans frameworks ni polices externes. */
 * { -webkit-box-sizing:border-box; box-sizing:border-box; }
@@ -369,6 +369,18 @@ body.night .important-item { background:#0e2531; border-color:#304957; }
 body.night .important-summary { background:#0c252b; border-color:#345161; }
 @media(max-width:420px) { .important-col { float:none; width:100%; } }
 
+
+/* V3.7 : événements Google chiffrés, lecture seule, affichage distinct. */
+.google-panel { border:1px solid #41677a; background:#172d3a; border-radius:12px; padding:15px; margin-top:14px; }
+.google-event { margin:8px 0; padding:11px 12px; background:#203b48; border-radius:9px; border-left:3px solid #8dc0d3; }
+.google-event strong { display:block; font-size:17px; color:#f0f7fa; }
+.google-event span { font-size:14px; display:block; margin-top:4px; color:#b9cfda; }
+.google-status { font-size:13px; color:#c0d4df; line-height:1.5; padding:8px 0; }
+.google-buttons button { margin:5px 7px 5px 0; }
+.google-title { color:#bde9fb; }
+body.night .google-panel { background:#0c2230; }
+body.night .google-event { background:#122b36; }
+
 </style>
 </head>
 <body>
@@ -405,7 +417,7 @@ body.night .important-summary { background:#0c252b; border-color:#345161; }
       <div class="portal-item"><button type="button" class="portal-card" onclick="showPage('weather')"><span class="portal-symbol">☀</span><span class="portal-name">Météo</span><span class="portal-desc">4 villes et prévisions</span></button></div>
     </div>
     <div class="portal-row">
-      <div class="portal-item"><button type="button" class="portal-card" onclick="showPage('agenda')"><span class="portal-symbol">▤</span><span class="portal-name">Agenda</span><span class="portal-desc">Événements familiaux</span></button></div>
+      <div class="portal-item"><button type="button" class="portal-card" onclick="showPage('agenda')"><span class="portal-symbol">▤</span><span class="portal-name">Agenda</span><span class="portal-desc">Événements locaux et Google</span></button></div>
       <div class="portal-item"><button type="button" class="portal-card" onclick="showPage('notes')"><span class="portal-symbol">✎</span><span class="portal-name">Notes</span><span class="portal-desc" id="portal-notes-desc">Mémos et sauvegardes</span></button></div>
     </div>
     <div class="portal-row">
@@ -530,6 +542,20 @@ body.night .important-summary { background:#0c252b; border-color:#345161; }
     <div class="message" id="agenda-message" aria-live="polite"></div>
   </div>
   <div class="panel"><h2>Planning familial</h2><div id="events-list" class="empty">Aucun événement enregistré.</div><p class="agenda-help">Les événements anciens restent disponibles jusqu'à leur suppression. La suppression demande confirmation.</p></div>
+
+  <div class="panel" id="google-calendar-panel">
+    <h2 class="google-title">Calendrier Google partagé · lecture seule</h2>
+    <p>Copie chiffrée d'un seul calendrier choisi, indépendante de l'agenda local. Aucun mot de passe Google, aucune adresse iCal secrète sur l'iPad ou GitHub.</p>
+    <div class="field"><label for="google-calendar-key">Clé de consultation du calendrier (différente de Bring!)</label>
+      <input id="google-calendar-key" type="password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Clé définie dans Google Apps Script"></div>
+    <div class="google-buttons">
+      <button type="button" class="primary" onclick="unlockGoogleCalendar()">Afficher le calendrier</button>
+      <button type="button" class="secondary" onclick="refreshGoogleCalendar()">Actualiser</button>
+      <button type="button" class="secondary" onclick="lockGoogleCalendar()">Verrouiller</button>
+    </div>
+    <div class="google-status" id="google-calendar-status" aria-live="polite">Saisis la clé pour consulter les rendez-vous Google. La clé reste seulement en mémoire pendant cette session.</div>
+    <div id="google-calendar-events" class="empty">Calendrier verrouillé.</div>
+  </div>
 </div>
 <div class="page" id="page-notes">
   <div class="panel">
@@ -708,7 +734,7 @@ body.night .important-summary { background:#0c252b; border-color:#345161; }
     <div class="idle-wake">Toucher pour revenir</div>
   </div>
 </div>
-<div class="footer">Tableau de bord V3.6 · Safari iOS 9 · météo, Bring! et actualités via GitHub</div>
+<div class="footer">Tableau de bord V3.7 · Safari iOS 9 · météo, Bring! et actualités via GitHub</div>
 <script src="sjcl.js"></script>
 <script>
 /* JavaScript ES5 : compatible avec Safari 9. */
@@ -2010,6 +2036,88 @@ body.night .important-summary { background:#0c252b; border-color:#345161; }
       xhr.send(null);
     }catch(e){complete(null);}
   };
+
+  /* V3.7 : agenda Google à part. AUCUN accès au compte Google.
+     Seul calendar.enc.json (SJCL AES-256-CCM) est téléchargé.
+     La phrase secrète et les événements déchiffrés restent en RAM. */
+  var googleKey=null,googleData=null,googleBusy=false,googleCachedAt=0;
+  function googleStatus(t) { el('google-calendar-status').innerHTML=escapeHtml(t); }
+  function googleDate(row) {
+    if(row.all_day && /^\d{4}-\d{2}-\d{2}$/.test(row.date||''))return prettyDate(row.date)+' · Toute la journée';
+    var timestamp=parseSyncUtc(row.start_utc);
+    if(timestamp===null)return 'Date non reconnue';
+    var d=new Date(timestamp),date=pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear();
+    var time=pad(d.getHours())+':'+pad(d.getMinutes());
+    var endMs=parseSyncUtc(row.end_utc||''),end=new Date(endMs||timestamp);
+    return date+' · '+time+(endMs && end.getDate()===d.getDate() && end.getMonth()===d.getMonth() ?
+      '–'+pad(end.getHours())+':'+pad(end.getMinutes()):'');
+  }
+  function googleRender() {
+    var node=el('google-calendar-events'),arr=googleData&&googleData.events,out='',i,row,count=0;
+    if(!arr){node.innerHTML='<div class="empty">Calendrier verrouillé.</div>';return;}
+    if(!arr.length){node.innerHTML='<div class="empty">Aucun rendez-vous disponible pour la période.</div>';return;}
+    for(i=0;i<arr.length && count<180;i++){
+      row=arr[i];
+      if(!row || typeof row.title!=='string' || row.title.length>250 || !parseSyncUtc(row.start_utc))continue;
+      out+='<div class="google-event"><strong>'+escapeHtml(row.title)+'</strong><span>'+escapeHtml(googleDate(row))+'</span></div>';
+      count++;
+    }
+    node.innerHTML=out || '<div class="empty">Aucun rendez-vous valide.</div>';
+  }
+  window.lockGoogleCalendar=function(){
+    googleKey=null;googleData=null;googleCachedAt=0;
+    el('google-calendar-key').value='';
+    if(typeof sjcl!=='undefined' && sjcl.misc)sjcl.misc.pa={};
+    googleStatus('Calendrier verrouillé.');googleRender();
+  };
+  function googleFetch() {
+    if(googleBusy || !googleKey)return;
+    if(typeof sjcl==='undefined' || !sjcl.decrypt){googleStatus('Bibliothèque de chiffrement indisponible.');return;}
+    googleBusy=true;googleStatus('Téléchargement de la copie chiffrée…');
+    var xhr=new XMLHttpRequest(),done=false;
+    var timer=window.setTimeout(function(){try{xhr.abort();}catch(e){}finish('Délai de connexion dépassé.',null);},20000);
+    function finish(error,cipher){
+      if(done)return;done=true;googleBusy=false;window.clearTimeout(timer);
+      if(error){googleStatus(error+(googleData?' Ancienne copie conservée en mémoire.':''));return;}
+      window.setTimeout(function(){
+        try {
+          var raw=sjcl.decrypt(googleKey,cipher),obj=JSON.parse(raw);
+          if(!obj || obj.v!==1 || Object.prototype.toString.call(obj.events)!=='[object Array]' || obj.events.length>180)throw Error('format');
+          googleData=obj;googleCachedAt=(new Date()).getTime();googleRender();
+          var stamp=parseSyncUtc(obj.updated_at_utc),msg='Lecture seule · '+obj.events.length+' événement(s) sur '+obj.days+' jours.';
+          if(stamp!==null){msg+=' Synchronisé : '+localSyncTime(stamp)+'.';if((new Date()).getTime()-stamp>3*3600000)msg+=' Attention : copie ancienne.';}
+          if(obj.truncated)msg+=' Liste tronquée.';
+          if(obj.skipped_recurring_rules)msg+=' Attention : '+obj.skipped_recurring_rules+' série(s) récurrente(s) non interprétée(s).';
+          googleStatus(msg);
+        }catch(e){googleStatus('Clé incorrecte, copie invalide ou fichier non déchiffrable.');}
+        finally {if(typeof sjcl!=='undefined' && sjcl.misc)sjcl.misc.pa={};}
+      },50);
+    }
+    try{
+      xhr.open('GET','calendar.enc.json?t='+((new Date()).getTime()),true);
+      xhr.onreadystatechange=function(){
+        if(xhr.readyState!==4||done)return;
+        if(xhr.status===200)finish(null,xhr.responseText);
+        else finish('Calendrier chiffré absent ou inaccessible (HTTP '+xhr.status+').',null);
+      };
+      xhr.onerror=function(){finish('Connexion impossible au calendrier chiffré.',null);};
+      xhr.send(null);
+    }catch(e){finish('Impossible de charger le calendrier chiffré.',null);}
+  }
+  window.unlockGoogleCalendar=function(){
+    var typed=el('google-calendar-key').value;
+    if(!typed || typed.length<30){googleStatus('Saisis ta clé secrète de 30 caractères minimum.');return;}
+    googleKey=typed;el('google-calendar-key').value='';
+    googleFetch();
+  };
+  window.refreshGoogleCalendar=function(){
+    if(!googleKey){googleStatus('Saisis d’abord la clé de consultation.');return;}
+    googleFetch();
+  };
+  window.setInterval(function(){
+    if(googleKey && el('page-agenda').className.indexOf('active')!==-1)googleFetch();
+  },900000);
+
   updateFreshIndicators();
   loadBringStatus();
   loadWeather();
