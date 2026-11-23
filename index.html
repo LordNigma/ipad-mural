@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
-<title>Maison - iPad Mural V3.5</title>
+<title>Maison - iPad Mural V3.6</title>
 <style>
 /* CSS volontairement simple : Safari iOS 9, sans frameworks ni polices externes. */
 * { -webkit-box-sizing:border-box; box-sizing:border-box; }
@@ -342,6 +342,33 @@ body.night .note-important-choice { background:#142833; border-color:#4c6b79; }
  .idle-important-message.long { font-size:18px; }
  .idle-important-sub { margin-top:12px; }
 }
+
+/* V3.6 — plusieurs messages prioritaires et expiration locale, Safari 9. */
+.important-form { margin-top:12px; }
+.important-form .field textarea { height:103px; }
+.important-form select { width:100%; background:#f4f7f9; color:#101d27;
+  font-size:17px; padding:11px 12px; border:1px solid #4c6473; border-radius:8px; }
+.important-two-cols { overflow:hidden; margin:0 -5px; }
+.important-col { width:50%; float:left; padding:0 5px; }
+.important-item { margin-top:12px; padding:14px 15px; border:1px solid #415969;
+  background:#243947; border-radius:10px; }
+.important-item.is-expired { opacity:.8; }
+.important-item.is-disabled { opacity:.74; }
+.important-item-head { overflow:hidden; margin-bottom:6px; }
+.important-item-title { font-weight:bold; float:left; font-size:15px; color:#ffdc91; }
+.important-item-state { float:right; color:#b8d3df; font-size:13px; }
+.important-item-body { font-size:17px; line-height:1.4; white-space:pre-wrap;
+  word-wrap:break-word; color:#f0f5f8; }
+.important-item-meta { color:#bad0da; font-size:13px; margin:8px 0; }
+.important-item-actions button { margin:5px 7px 0 0; }
+.important-field-hint { margin-top:5px; color:#afc3ce; font-size:13px; line-height:1.4; }
+.important-summary { margin-bottom:12px; padding:10px 13px; background:#18343e;
+  border-radius:8px; border:1px solid #3e6373; color:#e9d59b; font-size:14px; }
+.idle-important-meta { display:block; color:#facd78; font-size:14px; margin-top:16px; }
+body.night .important-item { background:#0e2531; border-color:#304957; }
+body.night .important-summary { background:#0c252b; border-color:#345161; }
+@media(max-width:420px) { .important-col { float:none; width:100%; } }
+
 </style>
 </head>
 <body>
@@ -463,7 +490,7 @@ body.night .note-important-choice { background:#142833; border-color:#4c6b79; }
 
   <div class="panel idle-settings">
     <h2>Veille intelligente</h2>
-    <p>Après une période sans toucher l’écran, affiche automatiquement les photos ou une grande horloge. Un toucher ramène à la page précédente.</p>
+    <p>Après une période sans toucher l’écran, affiche les messages importants actifs en priorité ; sinon les photos ou une grande horloge. Un toucher ramène à la page précédente.</p>
     <div class="idle-fields">
       <div class="idle-field">
         <label for="idle-mode-choice">Afficher pendant la veille</label>
@@ -507,15 +534,37 @@ body.night .note-important-choice { background:#142833; border-color:#4c6b79; }
 <div class="page" id="page-notes">
   <div class="panel">
     <h1>Notes de la maison</h1>
-    <p>Un mémo simple pour la famille (courses, rappel, message). Il est enregistré uniquement sur cet iPad. Une sauvegarde manuelle peut être copiée via le panneau ci-dessous.</p>
-    <div class="field"><label for="notes-input">Votre note</label><textarea id="notes-input" placeholder="Écrivez ici…"></textarea></div>
-    <label class="note-important-choice" for="note-important">
-      <input id="note-important" type="checkbox"> ★ Afficher comme message important sur la veille
-    </label>
-    <div class="note-important-help">Si cette case est cochée, cette note remplace l'horloge ou le diaporama lorsque la veille démarre. Jusqu'à 450 caractères pour garantir une lecture confortable. Décoche la case et enregistre pour revenir à la veille habituelle.</div>
-    <button class="primary" type="button" onclick="saveNotes()">Enregistrer la note et la priorité</button>
-    <div id="note-important-current" class="note-important-status" aria-live="polite"></div>
+    <p>Ton mémo habituel reste enregistré sur cet iPad. Les messages de veille sont maintenant gérés séparément, juste en dessous.</p>
+    <div class="field"><label for="notes-input">Mémo familial</label><textarea id="notes-input" placeholder="Écrivez ici…"></textarea></div>
+    <button class="primary" type="button" onclick="saveNotes()">Enregistrer le mémo</button>
     <div class="message" id="notes-message" aria-live="polite"></div>
+  </div>
+  <div class="panel">
+    <h2>Messages importants pour la veille</h2>
+    <p>Ajoute plusieurs messages avec une priorité et, si tu le souhaites, une date de fin. La veille affiche d'abord un message de priorité haute, puis normale, puis basse. Les messages de même priorité défilent toutes les 30 secondes. Un message expiré ne s'affiche plus.</p>
+    <div id="note-important-current" class="important-summary" aria-live="polite">Aucun message important actif.</div>
+    <div class="important-form">
+      <div class="field"><label for="important-text">Message à afficher (450 caractères maximum)</label>
+        <textarea id="important-text" maxlength="450" placeholder="Ex. : Ne pas oublier les clés du garage !"></textarea></div>
+      <div class="field"><label for="important-priority">Priorité</label>
+        <select id="important-priority">
+          <option value="3">Haute — prioritaire</option>
+          <option value="2" selected>Normale</option>
+          <option value="1">Basse</option>
+        </select></div>
+      <div class="important-two-cols">
+        <div class="important-col field"><label for="important-end-date">Date de fin (facultative)</label>
+          <input id="important-end-date" type="text" maxlength="10" placeholder="JJ/MM/AAAA"></div>
+        <div class="important-col field"><label for="important-end-time">Heure de fin (facultative)</label>
+          <input id="important-end-time" type="text" maxlength="5" placeholder="HH:MM"></div>
+      </div>
+      <p class="important-field-hint">Pour une expiration, indique les deux champs. L'heure est celle de l'iPad. Une fois expiré, le message reste dans la liste pour être modifié ou supprimé.</p>
+      <button class="primary" id="important-save-button" type="button" onclick="saveImportantMessage()">Ajouter ce message</button>
+      <button class="secondary" id="important-cancel-button" type="button" style="display:none" onclick="cancelImportantEdit()">Annuler la modification</button>
+      <div id="important-message" class="message" aria-live="polite"></div>
+    </div>
+    <h2>Messages enregistrés</h2>
+    <div id="important-list" class="empty">Aucun message enregistré.</div>
   </div>
   <div class="panel">
     <h2>Sauvegarde et transfert privés</h2>
@@ -651,15 +700,15 @@ body.night .note-important-choice { background:#142833; border-color:#4c6b79; }
     </div>
     <div id="idle-important-layer" class="idle-important-layer" style="display:none">
       <div class="idle-important-wrap">
-        <span class="idle-important-label">★ MESSAGE IMPORTANT</span>
+        <span class="idle-important-label" id="idle-important-label">★ MESSAGE IMPORTANT</span>
         <span id="idle-important-message" class="idle-important-message"></span>
-        <span class="idle-important-sub">Note enregistrée sur cet iPad</span>
+        <span class="idle-important-sub" id="idle-important-sub">Message enregistré sur cet iPad</span>
       </div>
     </div>
     <div class="idle-wake">Toucher pour revenir</div>
   </div>
 </div>
-<div class="footer">Tableau de bord V3.5 · Safari iOS 9 · météo, Bring! et actualités via GitHub</div>
+<div class="footer">Tableau de bord V3.6 · Safari iOS 9 · météo, Bring! et actualités via GitHub</div>
 <script src="sjcl.js"></script>
 <script>
 /* JavaScript ES5 : compatible avec Safari 9. */
@@ -857,20 +906,215 @@ body.night .note-important-choice { background:#142833; border-color:#4c6b79; }
     }
     el('events-list').innerHTML=out;
   }
+  /* V3.6 : liste de messages prioritaires. Aucun appel réseau ; données dans Safari.
+     La V3.5 utilisait une case booléenne attachée au mémo, reprise une fois au passage en V3.6. */
   var IMPORTANT_NOTE_KEY='ipad_mural_note_important_v35';
-  function importantSavedText() {
-    var t=load('ipad_mural_notes_v2')||'';
-    if(load(IMPORTANT_NOTE_KEY)!=='1' || !t.replace(/^\s+|\s+$/g,'')) return '';
-    if(t.length>450) return ''; // Évite une note longue qui cacherait le message.
-    return t;
+  var IMPORTANT_NOTES_KEY='ipad_mural_important_notes_v36';
+  var importantNotes=[],importantEditingId=0,idleImportantId=0,idleImportantSince=0,importantStorageCorrupt=false;
+  function importantPriorityName(p) {
+    return p===3?'Haute':(p===2?'Normale':'Basse');
+  }
+  function parseImportantExpiry(iso) {
+    if(iso==='')return null;
+    if(typeof iso!=='string')return null;
+    var m=/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(iso);
+    if(!m)return null;
+    var y=+m[1],mo=+m[2],da=+m[3],hh=+m[4],mm=+m[5];
+    if(y<2000 || y>2100 || hh>23 || mm>59)return null;
+    var d=new Date(y,mo-1,da,hh,mm,0,0);
+    if(d.getFullYear()!==y || d.getMonth()!==mo-1 || d.getDate()!==da ||
+       d.getHours()!==hh || d.getMinutes()!==mm)return null;
+    return d.getTime();
+  }
+  function formatImportantExpiry(iso) {
+    if(!iso)return 'Sans expiration';
+    return iso.substring(8,10)+'/'+iso.substring(5,7)+'/'+iso.substring(0,4)+' à '+iso.substring(11);
+  }
+  function validImportantRow(r) {
+    return r && typeof r.id==='number' && isFinite(r.id) && r.id>0 && Math.floor(r.id)===r.id &&
+      typeof r.text==='string' && r.text.length>0 && r.text.length<=450 &&
+      !!r.text.replace(/^\s+|\s+$/g,'') &&
+      (r.priority===1 || r.priority===2 || r.priority===3) &&
+      typeof r.enabled==='boolean' &&
+      typeof r.createdAt==='number' && isFinite(r.createdAt) &&
+      typeof r.expiresAt==='string' && (r.expiresAt==='' || parseImportantExpiry(r.expiresAt)!==null);
+  }
+  function validatedImportantRows(arr) {
+    if(Object.prototype.toString.call(arr)!=='[object Array]' || arr.length>40)return null;
+    var out=[],seen={},i,r;
+    for(i=0;i<arr.length;i++) {
+      r=arr[i];
+      if(!validImportantRow(r) || seen[r.id])return null;
+      seen[r.id]=true;
+      out.push({id:r.id,text:r.text,priority:r.priority,enabled:r.enabled,
+        createdAt:r.createdAt,expiresAt:r.expiresAt});
+    }
+    return out;
+  }
+  function legacyImportantRows(note,flag) {
+    if(flag==='1' && note && note.length<=450 && !!note.replace(/^\s+|\s+$/g,''))
+      return [{id:1,text:note,priority:2,enabled:true,createdAt:1,expiresAt:''}];
+    return [];
+  }
+  function loadImportantMessages() {
+    var raw=load(IMPORTANT_NOTES_KEY),candidate=null;
+    if(raw!==null) {
+      try {candidate=validatedImportantRows(JSON.parse(raw));} catch(e) {candidate=null;}
+      if(candidate!==null) { importantNotes=candidate; return; }
+      // Ne pas écraser un stockage incohérent ; demander restauration manuelle.
+      importantNotes=[];importantStorageCorrupt=true;
+      el('important-message').innerHTML='Les anciens messages semblent illisibles. Restaure une sauvegarde avant de les modifier.';
+      return;
+    }
+    importantNotes=legacyImportantRows(load('ipad_mural_notes_v2')||'',load(IMPORTANT_NOTE_KEY));
+    if(!store(IMPORTANT_NOTES_KEY,JSON.stringify(importantNotes))) {
+      el('important-message').innerHTML='Migration non sauvegardée : stockage Safari indisponible.';
+    }
+  }
+  function importantIsExpired(r,now) {
+    return !!r.expiresAt && parseImportantExpiry(r.expiresAt)<=now;
+  }
+  function activeImportantMessages(now) {
+    var out=[],i,r;
+    for(i=0;i<importantNotes.length;i++) {
+      r=importantNotes[i];
+      if(r.enabled && !importantIsExpired(r,now))out.push(r);
+    }
+    out.sort(function(a,b) {
+      if(a.priority!==b.priority)return b.priority-a.priority;
+      if(a.createdAt!==b.createdAt)return a.createdAt-b.createdAt;
+      return a.id-b.id;
+    });
+    return out;
+  }
+  function currentImportantMessage(now) {
+    var arr=activeImportantMessages(now),same=[],i;
+    if(!arr.length)return null;
+    for(i=0;i<arr.length;i++) {
+      if(arr[i].priority!==arr[0].priority)break;
+      same.push(arr[i]);
+    }
+    if(same.length===1)return same[0];
+    // Sur une même priorité, les messages alternent (30 secondes chacun).
+    var slot=Math.floor(now/30000);
+    return same[slot%same.length];
   }
   function refreshNotePreview() {
-    var t=el('notes-input').value;
-    var savedImportant=!!importantSavedText();
-    el('notes-preview').innerHTML=(savedImportant?'★ Important · ':'')+(t ? escapeHtml(t.substring(0,95)) : 'Touchez « Notes » pour écrire un mémo.');
-    el('note-important-current').innerHTML=savedImportant?'★ Message important actif pour la prochaine veille.':'Aucun message prioritaire actif.';
-    el('portal-notes-desc').innerHTML=savedImportant?'★ Message important actif':'Mémos et sauvegardes';
+    var text=el('notes-input').value,active=activeImportantMessages((new Date()).getTime());
+    el('notes-preview').innerHTML=(active.length?'★ '+active.length+' en veille · ':'')+
+      (text?escapeHtml(text.substring(0,75)):'Touchez « Notes » pour écrire un mémo.');
+    el('note-important-current').innerHTML=active.length?
+      ('★ '+active.length+' message(s) actif(s) · première priorité : '+importantPriorityName(active[0].priority)+'.'):
+      'Aucun message prioritaire actif pour la veille.';
+    el('portal-notes-desc').innerHTML=active.length?'★ '+active.length+' message(s) important(s)':'Mémos et rappels';
   }
+  function importantItemHtml(row,now) {
+    var expired=importantIsExpired(row,now),state=expired?'Expiré':(row.enabled?'Actif':'Désactivé');
+    var out='<div class="important-item'+(expired?' is-expired':(!row.enabled?' is-disabled':''))+'">';
+    out+='<div class="important-item-head"><span class="important-item-title">★ '+
+      escapeHtml(importantPriorityName(row.priority))+'</span><span class="important-item-state">'+escapeHtml(state)+'</span></div>';
+    out+='<div class="important-item-body">'+escapeHtml(row.text)+'</div>';
+    out+='<div class="important-item-meta">'+escapeHtml(formatImportantExpiry(row.expiresAt))+'</div>';
+    out+='<div class="important-item-actions"><button type="button" class="secondary smallbtn" onclick="editImportantMessage('+row.id+')">Modifier</button>';
+    out+='<button type="button" class="secondary smallbtn" onclick="toggleImportantMessage('+row.id+')">'+(row.enabled?'Désactiver':'Activer')+'</button>';
+    out+='<button type="button" class="secondary smallbtn" onclick="deleteImportantMessage('+row.id+')">Supprimer</button></div></div>';
+    return out;
+  }
+  function renderImportantList() {
+    var now=(new Date()).getTime(),list=importantNotes.slice(),out='',i;
+    list.sort(function(a,b) {if(a.priority!==b.priority)return b.priority-a.priority;return a.createdAt-b.createdAt;});
+    if(!list.length)out='<div class="empty">Aucun message enregistré pour la veille.</div>';
+    for(i=0;i<list.length;i++)out+=importantItemHtml(list[i],now);
+    el('important-list').innerHTML=out;
+    refreshNotePreview();
+  }
+  function findImportantMessage(id) {
+    var i;for(i=0;i<importantNotes.length;i++)if(importantNotes[i].id===id)return i;
+    return -1;
+  }
+  function importantMessageFeedback(t) {el('important-message').innerHTML=escapeHtml(t);}
+  function saveImportantRows(rows) {
+    if(importantStorageCorrupt) {
+      importantMessageFeedback('Messages existants illisibles : restaure une copie pour éviter de les écraser.');return false;
+    }
+    if(!store(IMPORTANT_NOTES_KEY,JSON.stringify(rows))) {
+      importantMessageFeedback('Enregistrement impossible : stockage Safari indisponible.');return false;
+    }
+    importantNotes=rows;
+    renderImportantList();
+    if(idleActive)idleSelectVisual();
+    return true;
+  }
+  function clearImportantEditor() {
+    importantEditingId=0;
+    el('important-text').value='';el('important-priority').value='2';
+    el('important-end-date').value='';el('important-end-time').value='';
+    el('important-save-button').innerHTML='Ajouter ce message';
+    el('important-cancel-button').style.display='none';
+  }
+  window.cancelImportantEdit=function(){ clearImportantEditor();importantMessageFeedback('Modification annulée.'); };
+  window.editImportantMessage=function(id) {
+    var i=findImportantMessage(id),r;
+    if(i<0)return;
+    r=importantNotes[i];importantEditingId=r.id;
+    el('important-text').value=r.text;el('important-priority').value=String(r.priority);
+    el('important-end-date').value=r.expiresAt?formatImportantExpiry(r.expiresAt).substring(0,10):'';
+    el('important-end-time').value=r.expiresAt?r.expiresAt.substring(11):'';
+    el('important-save-button').innerHTML='Enregistrer la modification';
+    el('important-cancel-button').style.display='inline-block';
+    importantMessageFeedback('Modifie le message ci-dessus, puis enregistre.');
+    window.scrollTo(0,el('important-text').getBoundingClientRect().top+window.pageYOffset-60);
+  };
+  window.saveImportantMessage=function() {
+    var text=el('important-text').value.replace(/^\s+|\s+$/g,'');
+    var pr=Number(el('important-priority').value),date=el('important-end-date').value.replace(/^\s+|\s+$/g,''),
+      time=el('important-end-time').value.replace(/^\s+|\s+$/g,''),expiration='',day,i,rows,id,now=(new Date()).getTime();
+    if(!text || text.length>450) {importantMessageFeedback('Saisis un message de 1 à 450 caractères.');return;}
+    if(pr!==1 && pr!==2 && pr!==3) {importantMessageFeedback('Priorité incorrecte.');return;}
+    if(!!date!==!!time) {importantMessageFeedback('Pour une expiration, indique à la fois la date et l’heure.');return;}
+    if(date) {
+      day=parseDate(date);
+      if(day===null || parseTime(time)===null) {
+        importantMessageFeedback('Date ou heure invalide. Utilise JJ/MM/AAAA et HH:MM.');return;
+      }
+      expiration=day+'T'+time;
+      if(parseImportantExpiry(expiration)===null || parseImportantExpiry(expiration)<=now) {
+        importantMessageFeedback('La date de fin doit être dans le futur (heure locale de cet iPad).');return;
+      }
+    }
+    rows=importantNotes.slice();
+    if(importantEditingId) {
+      i=findImportantMessage(importantEditingId);
+      if(i<0){importantMessageFeedback('Message introuvable.');return;}
+      rows[i]={id:rows[i].id,text:text,priority:pr,enabled:rows[i].enabled,
+        createdAt:rows[i].createdAt,expiresAt:expiration};
+    } else {
+      if(rows.length>=40){importantMessageFeedback('Limite de 40 messages atteinte. Supprime un ancien message.');return;}
+      id=now;
+      while(findImportantMessage(id)>=0)id++;
+      rows.push({id:id,text:text,priority:pr,enabled:true,createdAt:now,expiresAt:expiration});
+    }
+    if(saveImportantRows(rows)) {
+      clearImportantEditor();importantMessageFeedback('Message important enregistré localement sur cet iPad.');
+    }
+  };
+  window.toggleImportantMessage=function(id) {
+    var i=findImportantMessage(id),rows=importantNotes.slice(),r;
+    if(i<0)return;
+    r=rows[i];
+    rows[i]={id:r.id,text:r.text,priority:r.priority,expiresAt:r.expiresAt,
+      createdAt:r.createdAt,enabled:!r.enabled};
+    if(saveImportantRows(rows))importantMessageFeedback(r.enabled?'Message désactivé.':'Message activé.');
+  };
+  window.deleteImportantMessage=function(id) {
+    var i=findImportantMessage(id),rows=importantNotes.slice();
+    if(i<0 || !window.confirm('Supprimer définitivement ce message important ?'))return;
+    rows.splice(i,1);
+    if(saveImportantRows(rows)){
+      if(importantEditingId===id)clearImportantEditor();
+      importantMessageFeedback('Message supprimé.');
+    }
+  };
   window.showPage=function(name) {
     var ids=['home','general','agenda','notes','cameras','weather','photos','courses','actualites'],i,active;
     var labels={general:'Vue générale',agenda:'Agenda familial',notes:'Notes',cameras:'Caméras',weather:'Météo internationale',photos:'Diaporama',courses:'Courses Bring!',actualites:'Actualités'};
@@ -893,6 +1137,7 @@ body.night .note-important-choice { background:#142833; border-color:#4c6b79; }
       else { photoShowCurrent(); photoSchedule(); }
     }
     if(name==='actualites') renderNews();
+    if(name==='notes') renderImportantList();
   };
   window.addEvent=function() {
     var title=el('event-title').value.replace(/^\s+|\s+$/g,'');
@@ -1154,29 +1399,29 @@ body.night .note-important-choice { background:#142833; border-color:#4c6b79; }
       drawCityCards();showSelectedWeather();
     }
   },60000);
-  /* V3.1 : transfert local via copier/coller, sans serveur ni téléversement de données privées. */
+  /* Copie manuelle, sans serveur, avec migration des sauvegardes V3.0-V3.5. */
   function backupMessage(message) { el('backup-message').innerHTML=escapeHtml(message); }
   var prefKeys=['ipad_mural_main_city_v27','ipad_mural_display_mode_v24',
     'ipad_mural_idle_mode_v29','ipad_mural_idle_delay_v29','ipad_mural_photo_delay_v28',IMPORTANT_NOTE_KEY];
   window.showBackupCopy=function() {
     var savedNote=load('ipad_mural_notes_v2')||'',p={},i;
-    if(el('notes-input').value!==savedNote ||
-       el('note-important').checked !== (load(IMPORTANT_NOTE_KEY)==='1')) {
-      backupMessage('Enregistre d’abord la note et sa priorité avant de faire une copie.'); return;
+    if(el('notes-input').value!==savedNote) {
+      backupMessage('Enregistre d’abord le mémo avant de faire une copie.'); return;
     }
     for(i=0;i<prefKeys.length;i++) p[prefKeys[i]]=load(prefKeys[i]);
-    var b={schema:2,notes:savedNote,events:events,preferences:p};
+    var b={schema:3,notes:savedNote,events:events,importantNotes:importantNotes,preferences:p};
     el('backup-copy').value=JSON.stringify(b);
-    backupMessage('Copie tout le texte ci-dessus et conserve-le dans un endroit privé, hors GitHub.');
+    backupMessage('Copie tout le texte ci-dessus et conserve-le dans un endroit privé, hors GitHub. Les modifications non enregistrées dans les messages ne sont pas incluses.');
   };
   window.importBackupCopy=function() {
-    var raw=el('backup-copy').value, b=null, i,e,keys,backup={};
-    if(!raw || raw.length>200000) { backupMessage('Texte vide ou trop volumineux.'); return; }
-    try { b=JSON.parse(raw); } catch(err) { backupMessage('Texte de sauvegarde invalide.'); return; }
-    if(b && b.backup && b.backup.schema===1) b=b.backup;
-    if(!b || (b.schema!==1 && b.schema!==2) || typeof b.notes!=='string' || b.notes.length>80000 ||
+    var raw=el('backup-copy').value,b=null,i,e,keys,snapshot={},rows,legacyFlag='0';
+    if(!raw || raw.length>200000) {backupMessage('Texte vide ou trop volumineux.');return;}
+    try {b=JSON.parse(raw);} catch(err) {backupMessage('Texte de sauvegarde invalide.');return;}
+    if(b && b.backup && b.backup.schema===1)b=b.backup;
+    if(!b || (b.schema!==1 && b.schema!==2 && b.schema!==3) ||
+       typeof b.notes!=='string' || b.notes.length>80000 ||
        Object.prototype.toString.call(b.events)!=='[object Array]' || b.events.length>250) {
-      backupMessage('Format de sauvegarde non reconnu.'); return;
+      backupMessage('Format de sauvegarde non reconnu.');return;
     }
     for(i=0;i<b.events.length;i++) {
       e=b.events[i];
@@ -1184,40 +1429,46 @@ body.night .note-important-choice { background:#142833; border-color:#4c6b79; }
          typeof e.title!=='string' || e.title.length>500 ||
          typeof e.date!=='string' || !/^\d{4}-\d{2}-\d{2}$/.test(e.date) ||
          (typeof e.time!=='undefined' && (typeof e.time!=='string' || !/^\d{2}:\d{2}$/.test(e.time)))) {
-        backupMessage('Un rendez-vous a un format invalide. Restauration annulée.'); return;
+        backupMessage('Un rendez-vous a un format invalide. Restauration annulée.');return;
       }
     }
-    if(!window.confirm('Importer '+b.events.length+' événement(s) et la note ? Cela remplacera les données actuelles de cet iPad.')) {
-      backupMessage('Importation annulée.'); return;
+    if(b.schema===3) {
+      rows=validatedImportantRows(b.importantNotes);
+      if(rows===null){backupMessage('Liste de messages prioritaires invalide. Restauration annulée.');return;}
+    } else {
+      legacyFlag=(b.schema===2 && b.preferences && b.preferences[IMPORTANT_NOTE_KEY]==='1')?'1':'0';
+      rows=legacyImportantRows(b.notes,legacyFlag);
     }
-    keys=['ipad_mural_notes_v2','ipad_mural_events_v2',IMPORTANT_NOTE_KEY];
-    if(b.schema===2 && b.preferences) {
+    if(!window.confirm('Importer '+b.events.length+' événement(s), '+rows.length+' message(s) important(s) et le mémo ? Cela remplacera les données locales.')) {
+      backupMessage('Importation annulée.');return;
+    }
+    keys=['ipad_mural_notes_v2','ipad_mural_events_v2',IMPORTANT_NOTE_KEY,IMPORTANT_NOTES_KEY];
+    if(b.schema>=2 && b.preferences) {
       for(i=0;i<prefKeys.length;i++) {
-        if(prefKeys[i]!==IMPORTANT_NOTE_KEY && typeof b.preferences[prefKeys[i]]==='string') keys.push(prefKeys[i]);
+        if(prefKeys[i]!==IMPORTANT_NOTE_KEY && typeof b.preferences[prefKeys[i]]==='string')keys.push(prefKeys[i]);
       }
     }
-    for(i=0;i<keys.length;i++) backup[keys[i]]=load(keys[i]);
+    for(i=0;i<keys.length;i++)snapshot[keys[i]]=load(keys[i]);
     var success=store('ipad_mural_notes_v2',b.notes) &&
-      store('ipad_mural_events_v2',JSON.stringify(b.events));
-    if(success && b.schema===2 && b.preferences) {
+      store('ipad_mural_events_v2',JSON.stringify(b.events)) &&
+      store(IMPORTANT_NOTES_KEY,JSON.stringify(rows));
+    if(success && b.schema>=2 && b.preferences) {
       for(i=0;i<prefKeys.length;i++) {
         if(prefKeys[i]!==IMPORTANT_NOTE_KEY && typeof b.preferences[prefKeys[i]]==='string') {
-          if(!store(prefKeys[i],b.preferences[prefKeys[i]])) success=false;
+          if(!store(prefKeys[i],b.preferences[prefKeys[i]])){success=false;break;}
         }
       }
     }
-    /* Les anciennes copies sans indicateur réinitialisent la priorité : pas de fausse alerte. */
     if(success) {
-      var copyPriority=(b.schema===2 && b.preferences && b.preferences[IMPORTANT_NOTE_KEY]==='1' &&
-        !!b.notes.replace(/^\s+|\s+$/g,'') && b.notes.length<=450)?'1':'0';
-      if(!store(IMPORTANT_NOTE_KEY,copyPriority)) success=false;
+      var oldPriority=(b.schema>=2 && b.preferences && b.preferences[IMPORTANT_NOTE_KEY]==='1')?'1':'0';
+      if(!store(IMPORTANT_NOTE_KEY,oldPriority))success=false;
     }
     if(!success) {
       for(i=0;i<keys.length;i++) {
-        if(backup[keys[i]]!==null) store(keys[i],backup[keys[i]]);
-        else try {window.localStorage.removeItem(keys[i]);} catch(err) {}
+        if(snapshot[keys[i]]!==null)store(keys[i],snapshot[keys[i]]);
+        else try{window.localStorage.removeItem(keys[i]);}catch(err){}
       }
-      backupMessage('Stockage Safari insuffisant : aucune restauration validée.'); return;
+      backupMessage('Stockage Safari insuffisant : aucune restauration validée.');return;
     }
     window.alert('Restauration réussie. La page va se recharger pour appliquer les préférences.');
     window.location.reload();
@@ -1412,13 +1663,20 @@ body.night .note-important-choice { background:#142833; border-color:#4c6b79; }
   }
   function idleSelectVisual() {
     idleStopPhotoTimer();
-    var important=importantSavedText(),layer=el('idle-important-layer');
+    var now=(new Date()).getTime(),important=currentImportantMessage(now),layer=el('idle-important-layer');
+    idleImportantId=important?important.id:0;
+    idleImportantSince=now;
     if(important) {
       el('idle-clock-layer').style.display='none';
       el('idle-photo-layer').style.display='none';
+      el('idle-photo-image').style.display='none';
       var msg=el('idle-important-message');
-      msg.textContent=important;
-      msg.className='idle-important-message'+(important.length>280?' long':(important.length>120?' medium':''));
+      msg.textContent=important.text;
+      msg.className='idle-important-message'+(important.text.length>280?' long':(important.text.length>120?' medium':''));
+      el('idle-important-label').innerHTML='★ MESSAGE · PRIORITÉ '+escapeHtml(importantPriorityName(important.priority).toUpperCase());
+      el('idle-important-sub').innerHTML=important.expiresAt?
+        'Jusqu’au '+escapeHtml(formatImportantExpiry(important.expiresAt))+' · Toucher pour revenir':
+        'Message enregistré sur cet iPad · Toucher pour revenir';
       layer.style.display='block';
       return;
     }
@@ -1428,11 +1686,14 @@ body.night .note-important-choice { background:#142833; border-color:#4c6b79; }
       el('idle-photo-layer').style.display='block';
       idlePhotoIndex=photoIndex<photoList.length?photoIndex:0;
       idlePhotoShow();
-      if(photoList.length>1) idlePhotoTimer=window.setInterval(function() {
-        idlePhotoIndex=(idlePhotoIndex+1)%photoList.length;
-        idlePhotoShow();
+      if(photoList.length>1)idlePhotoTimer=window.setInterval(function(){
+        idlePhotoIndex=(idlePhotoIndex+1)%photoList.length;idlePhotoShow();
       },photoInterval);
     } else idleClockFallback();
+  }
+  function idleCheckImportantChange() {
+    var now=(new Date()).getTime(),r=currentImportantMessage(now);
+    if((r?r.id:0)!==idleImportantId)idleSelectVisual();
   }
   function enterIdle(force) {
     if(idleActive || (!force && idleMode==='off')) return;
@@ -1451,6 +1712,7 @@ body.night .note-important-choice { background:#142833; border-color:#4c6b79; }
     el('idle-photo-image').style.display='none';
     el('idle-photo-image').removeAttribute('src');
     idleLastActivity=(new Date()).getTime();
+    if(el('page-notes').className.indexOf('active')!==-1)renderImportantList();
     photoSchedule(); // reprend éventuellement le diaporama manuel précédent
   }
   window.wakeIdle=function(ev) {
@@ -1466,7 +1728,7 @@ body.night .note-important-choice { background:#142833; border-color:#4c6b79; }
     if(!idleActive) idleLastActivity=(new Date()).getTime();
   }
   function idleCheck() {
-    if(idleActive) { idleCurrentTime(); return; }
+    if(idleActive) { idleCurrentTime(); idleCheckImportantChange(); return; }
     if(idleMode==='off') return;
     if(document.hidden === true) { idleRememberActivity(); return; }
     var active=document.activeElement;
@@ -1479,7 +1741,7 @@ body.night .note-important-choice { background:#142833; border-color:#4c6b79; }
     var name=idleMode==='photos'?'Diaporama':(idleMode==='clock'?'Horloge':'Désactivée');
     el('idle-settings-status').innerHTML='Mode : '+name+'. Délai : '+(idleDelay/60000)+' min.'+
      (idleMode==='photos'?' Sans photo, l’horloge s’affiche automatiquement.':'')+
-     ' Une note importante enregistrée est prioritaire pendant la veille.';
+     ' Les messages importants actifs passent en priorité pendant la veille.';
   }
   window.changeIdlePreferences=function() {
     var m=el('idle-mode-choice').value;
@@ -1532,29 +1794,20 @@ body.night .note-important-choice { background:#142833; border-color:#4c6b79; }
   updateDisplayMode();
   window.setInterval(updateDisplayMode,60000);
   window.saveNotes=function() {
-    var note=el('notes-input').value,checked=el('note-important').checked;
-    if(checked && !note.replace(/^\s+|\s+$/g,'')) {
-      el('notes-message').innerHTML='Écris une note avant de la marquer comme importante.'; return;
-    }
-    if(checked && note.length>450) {
-      el('notes-message').innerHTML='Pour l’écran de veille, réduis le message important à 450 caractères maximum ou décoche la priorité.'; return;
-    }
-    var previous=load('ipad_mural_notes_v2');
+    var note=el('notes-input').value;
     if(!store('ipad_mural_notes_v2',note)) {
       el('notes-message').innerHTML='Impossible de sauvegarder : stockage local indisponible.';return;
     }
-    if(!store(IMPORTANT_NOTE_KEY,checked?'1':'0')) {
-      if(previous!==null) store('ipad_mural_notes_v2',previous);
-      else try{window.localStorage.removeItem('ipad_mural_notes_v2');}catch(e){}
-      el('notes-message').innerHTML='Impossible de conserver la priorité : aucune modification validée.';
-      return;
-    }
-    el('notes-message').innerHTML=checked?'Message important enregistré. Il sera affiché pendant la veille.':'Note enregistrée. Veille habituelle rétablie.';
+    el('notes-message').innerHTML='Mémo enregistré sur cet iPad.';
     refreshNotePreview();
   };
-  try { var saved=load('ipad_mural_events_v2'); if(saved) { var temp=JSON.parse(saved); if(Object.prototype.toString.call(temp)==='[object Array]') events=temp; } } catch(e) { events=[]; }
+  try {var saved=load('ipad_mural_events_v2');if(saved) {
+    var temp=JSON.parse(saved);
+    if(Object.prototype.toString.call(temp)==='[object Array]')events=temp;
+  }}catch(e){events=[];}
   el('notes-input').value=load('ipad_mural_notes_v2')||'';
-  el('note-important').checked=!!importantSavedText();
+  loadImportantMessages();
+  renderImportantList();
   refreshNotePreview(); refreshEvents(); updateClock(); window.setEventDate('today');
   window.setInterval(updateClock,10000);
   window.setInterval(refreshEvents,60000);
